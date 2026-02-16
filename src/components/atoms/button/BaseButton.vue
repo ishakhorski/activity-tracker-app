@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from "vue";
-import { reactiveOmit } from "@vueuse/core";
-import { twMerge } from "tailwind-merge";
+import { type HTMLAttributes } from 'vue'
+import { reactiveOmit } from '@vueuse/core'
+import { twMerge } from 'tailwind-merge'
 
-import { Primitive, useForwardProps, type PrimitiveProps } from "reka-ui";
+import { Primitive, useForwardProps, type PrimitiveProps } from 'reka-ui'
 
-import { buttonVariation, type ButtonVariation } from "./index";
+import { buttonVariation, type ButtonVariation } from './index'
 
 const props = withDefaults(
   defineProps<
     PrimitiveProps & {
-      variant?: ButtonVariation["variant"];
-      size?: ButtonVariation["size"];
-      class?: HTMLAttributes["class"];
+      variant?: ButtonVariation['variant']
+      size?: ButtonVariation['size']
+      class?: HTMLAttributes['class']
     }
   >(),
   {
-    as: "button",
-    variant: "primary",
-    size: "medium",
+    as: 'button',
+    variant: 'primary',
+    size: 'medium',
   },
-);
+)
 
-const delegatedProps = reactiveOmit(props, "variant", "size", "class");
-const forwarded = useForwardProps(delegatedProps);
+const delegatedProps = reactiveOmit(props, 'variant', 'size', 'class')
+const forwarded = useForwardProps(delegatedProps)
 </script>
 
 <template>

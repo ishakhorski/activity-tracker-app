@@ -1,7 +1,7 @@
 export const ACTIVITY_SCHEDULE_TYPE = {
-  DAILY: "daily",
-  WEEKLY: "weekly",
-} as const;
+  DAILY: 'daily',
+  WEEKLY: 'weekly',
+} as const
 
 export const WEEKDAY = {
   MON: 1,
@@ -11,19 +11,19 @@ export const WEEKDAY = {
   FRI: 5,
   SAT: 6,
   SUN: 0,
-} as const;
+} as const
 
-export type Weekday = (typeof WEEKDAY)[keyof typeof WEEKDAY];
+export type Weekday = (typeof WEEKDAY)[keyof typeof WEEKDAY]
 
 export const WEEKDAY_LABELS: Record<Weekday, string> = {
-  [WEEKDAY.MON]: "Mon",
-  [WEEKDAY.TUE]: "Tue",
-  [WEEKDAY.WED]: "Wed",
-  [WEEKDAY.THU]: "Thu",
-  [WEEKDAY.FRI]: "Fri",
-  [WEEKDAY.SAT]: "Sat",
-  [WEEKDAY.SUN]: "Sun",
-};
+  [WEEKDAY.MON]: 'Mon',
+  [WEEKDAY.TUE]: 'Tue',
+  [WEEKDAY.WED]: 'Wed',
+  [WEEKDAY.THU]: 'Thu',
+  [WEEKDAY.FRI]: 'Fri',
+  [WEEKDAY.SAT]: 'Sat',
+  [WEEKDAY.SUN]: 'Sun',
+}
 
 export const WEEKDAYS_ORDERED: Weekday[] = [
   WEEKDAY.MON,
@@ -33,17 +33,17 @@ export const WEEKDAYS_ORDERED: Weekday[] = [
   WEEKDAY.FRI,
   WEEKDAY.SAT,
   WEEKDAY.SUN,
-];
+]
 
 export interface DailySchedule {
-  type: typeof ACTIVITY_SCHEDULE_TYPE.DAILY;
-  targetCompletions: number;
+  type: typeof ACTIVITY_SCHEDULE_TYPE.DAILY
+  targetCompletions: number
 }
 
 export interface WeeklySchedule {
-  type: typeof ACTIVITY_SCHEDULE_TYPE.WEEKLY;
-  days: Weekday[];
-  targetCompletions: number;
+  type: typeof ACTIVITY_SCHEDULE_TYPE.WEEKLY
+  days: Weekday[]
+  targetCompletions: number
 }
 
-export type ActivitySchedule = DailySchedule | WeeklySchedule;
+export type ActivitySchedule = DailySchedule | WeeklySchedule

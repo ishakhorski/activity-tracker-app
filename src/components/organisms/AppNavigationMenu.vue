@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-import IconHeart from "@/assets/icons/heart.svg";
-import IconChart from "@/assets/icons/chart.svg";
+import IconHeart from '@/assets/icons/heart.svg'
+import IconChart from '@/assets/icons/chart.svg'
 
-const route = useRoute();
+const route = useRoute()
 
 const items = [
-  { to: "/activities", label: "Activities", icon: IconHeart },
-  { to: "/stats", label: "Stats", icon: IconChart },
-];
+  { to: '/activities', label: 'Activities', icon: IconHeart },
+  { to: '/stats', label: 'Stats', icon: IconChart },
+]
 
 const activeIndex = computed(() => {
-  const index = items.findIndex((item) => route.path.startsWith(item.to));
-  return index === -1 ? 0 : index;
-});
+  const index = items.findIndex((item) => route.path.startsWith(item.to))
+  return index === -1 ? 0 : index
+})
 </script>
 
 <template>
-  <nav class="glass rounded-full p-1">
+  <nav aria-label="Main navigation" class="glass rounded-full p-1">
     <div class="relative flex">
       <div
         class="absolute inset-y-0 w-20 rounded-full bg-primary/15 glass transition-transform duration-300 ease-out"

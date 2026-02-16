@@ -1,17 +1,52 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from "vue";
-import { twMerge } from "tailwind-merge";
+import { type HTMLAttributes, computed, provide } from 'vue'
+import { reactiveOmit } from '@vueuse/core'
+import { twMerge } from 'tailwind-merge'
 
-import { toggleButtonVariation } from "./index";
+import { Primitive, useForwardProps, type PrimitiveProps } from 'reka-ui'
 
-const props = defineProps<{
-  active?: boolean;
-  class?: HTMLAttributes["class"];
-}>();
+import {
+  toggleButtonVariation,
+  type ToggleButtonVariation,
+  TOGGLE_BUTTON_CONTEXT_KEY,
+} from './index'
+
+const props = withDefaults(
+  defineProps<
+    PrimitiveProps & {
+      size?: ToggleButtonVariation['size']
+      class?: HTMLAttributes['class']
+    }
+  >(),
+  {
+    as: 'button',
+    size: 'medium',
+  },
+)
+
+const modelValue = defineModel<boolean>({ default: false })
+
+const dataState = computed(() => (modelValue.value ? 'on' : 'off'))
+
+function toggle() {
+  modelValue.value = !modelValue.value
+}
+
+provide(TOGGLE_BUTTON_CONTEXT_KEY, { pressed: modelValue })
+
+const delegatedProps = reactiveOmit(props, 'size', 'class')
+const forwarded = useForwardProps(delegatedProps)
 </script>
 
 <template>
-  <button :class="twMerge(toggleButtonVariation({ active: props.active ?? false }), props.class)">
+  <Primitive
+    v-bind="forwarded"
+    role="switch"
+    :aria-checked="modelValue"
+    :data-state="dataState"
+    :class="twMerge(toggleButtonVariation({ size: props.size }), props.class)"
+    @click="toggle"
+  >
     <slot />
-  </button>
+  </Primitive>
 </template>

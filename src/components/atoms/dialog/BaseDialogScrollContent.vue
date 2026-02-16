@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from "vue";
-import { reactiveOmit } from "@vueuse/core";
-import { twMerge } from "tailwind-merge";
+import { type HTMLAttributes } from 'vue'
+import { reactiveOmit } from '@vueuse/core'
+import { twMerge } from 'tailwind-merge'
 
 import {
   DialogClose,
@@ -11,33 +11,33 @@ import {
   useForwardPropsEmits,
   type DialogContentEmits,
   type DialogContentProps,
-} from "reka-ui";
+} from 'reka-ui'
 
-import IconClose from "@/assets/icons/close.svg";
+import IconClose from '@/assets/icons/close.svg'
 
 import {
   baseDialogCloseButtonVariation,
   baseDialogScrollContentVariation,
   baseDialogScrollOverlayVariation,
-} from "./index";
+} from './index'
 
 defineOptions({
   inheritAttrs: false,
-});
+})
 
 const props = withDefaults(
   defineProps<
-    DialogContentProps & { class?: HTMLAttributes["class"]; showCloseButton?: boolean }
+    DialogContentProps & { class?: HTMLAttributes['class']; showCloseButton?: boolean }
   >(),
   {
     showCloseButton: true,
   },
-);
-const emits = defineEmits<DialogContentEmits>();
+)
+const emits = defineEmits<DialogContentEmits>()
 
-const delegatedProps = reactiveOmit(props, "class", "showCloseButton");
+const delegatedProps = reactiveOmit(props, 'class', 'showCloseButton')
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
 
 <template>
@@ -48,13 +48,13 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         v-bind="{ ...$attrs, ...forwarded }"
         @pointer-down-outside="
           (event) => {
-            const originalEvent = event.detail.originalEvent;
-            const target = originalEvent.target as HTMLElement;
+            const originalEvent = event.detail.originalEvent
+            const target = originalEvent.target as HTMLElement
             if (
               originalEvent.offsetX > target.clientWidth ||
               originalEvent.offsetY > target.clientHeight
             ) {
-              event.preventDefault();
+              event.preventDefault()
             }
           }
         "
@@ -62,7 +62,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         <slot />
 
         <DialogClose v-if="showCloseButton" :class="baseDialogCloseButtonVariation()">
-          <IconClose class="size-5" />
+          <IconClose class="size-4" />
           <span class="sr-only">Close</span>
         </DialogClose>
       </DialogContent>

@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import AppNavigationMenu from "@/components/organisms/AppNavigationMenu.vue";
+import AppNavigationMenu from '@/components/organisms/AppNavigationMenu.vue'
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="relative flex flex-col h-dvh overflow-hidden">
     <slot />
-    <AppNavigationMenu class="fixed z-10 right-1/2 translate-x-1/2 bottom-safe" />
+
+    <AppNavigationMenu class="nav-position fixed z-10 right-1/2 translate-x-1/2" />
   </div>
 </template>
+
+<style scoped>
+.nav-position {
+  bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
+}
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref } from 'vue'
 
 import {
   BaseDialog,
@@ -7,46 +7,79 @@ import {
   BaseDialogHeader,
   BaseDialogTitle,
   BaseDialogFooter,
-} from "@/components/atoms/dialog";
-import { BaseButton } from "@/components/atoms/button";
-import { BaseNumberStepper } from "@/components/atoms/number-stepper";
+} from '@/components/atoms/dialog'
+import { BaseButton } from '@/components/atoms/button'
+import {
+  BaseNumberStepper,
+  BaseNumberStepperDecreaseButton,
+  BaseNumberStepperIncreaseButton,
+  BaseNumberStepperInput,
+} from '@/components/atoms/number-stepper'
 
-import IconBoltFill from "@/assets/icons/bolt-fill.svg";
+import IconBoltFill from '@/assets/icons/bolt-fill.svg'
 
 import {
   ACTIVITY_SCHEDULE_TYPE,
   WEEKDAYS_ORDERED,
   WEEKDAY_LABELS,
   type Weekday,
-} from "@/types/activitySchedule";
+  type ActivitySchedule,
+} from '@/types/activitySchedule'
+import { useActivities } from '@/composables/useActivities'
 
-const open = defineModel<boolean>("open", { default: false });
+const { createActivity } = useActivities()
 
-const title = ref("");
-const scheduleType = ref<string>(ACTIVITY_SCHEDULE_TYPE.DAILY);
-const targetCompletions = ref(1);
-const selectedDays = ref<Weekday[]>([...WEEKDAYS_ORDERED]);
+const open = defineModel<boolean>('open', { default: false })
+
+const title = ref('')
+const scheduleType = ref<string>(ACTIVITY_SCHEDULE_TYPE.DAILY)
+const targetCompletions = ref(1)
+const selectedDays = ref<Weekday[]>([...WEEKDAYS_ORDERED])
 
 const scheduleOptions = [
-  { value: ACTIVITY_SCHEDULE_TYPE.DAILY, label: "Daily" },
-  { value: ACTIVITY_SCHEDULE_TYPE.WEEKLY, label: "Weekly" },
-];
+  { value: ACTIVITY_SCHEDULE_TYPE.DAILY, label: 'Daily' },
+  { value: ACTIVITY_SCHEDULE_TYPE.WEEKLY, label: 'Weekly' },
+]
 
 const targetLabel = computed(() =>
-  targetCompletions.value === 1 ? "time per day" : "times per day",
-);
+  targetCompletions.value === 1 ? 'time per day' : 'times per day',
+)
 
 function toggleDay(day: Weekday) {
-  const index = selectedDays.value.indexOf(day);
+  const index = selectedDays.value.indexOf(day)
   if (index >= 0 && selectedDays.value.length > 1) {
-    selectedDays.value.splice(index, 1);
+    selectedDays.value.splice(index, 1)
   } else if (index < 0) {
-    selectedDays.value.push(day);
+    selectedDays.value.push(day)
   }
 }
 
 function isDaySelected(day: Weekday) {
-  return selectedDays.value.includes(day);
+  return selectedDays.value.includes(day)
+}
+
+function resetForm() {
+  title.value = ''
+  scheduleType.value = ACTIVITY_SCHEDULE_TYPE.DAILY
+  targetCompletions.value = 1
+  selectedDays.value = [...WEEKDAYS_ORDERED]
+}
+
+function handleSave() {
+  if (!title.value.trim()) return
+
+  const schedule: ActivitySchedule =
+    scheduleType.value === ACTIVITY_SCHEDULE_TYPE.WEEKLY
+      ? {
+          type: ACTIVITY_SCHEDULE_TYPE.WEEKLY,
+          days: [...selectedDays.value],
+          targetCompletions: targetCompletions.value,
+        }
+      : { type: ACTIVITY_SCHEDULE_TYPE.DAILY, targetCompletions: targetCompletions.value }
+
+  createActivity({ title: title.value.trim(), schedule })
+  resetForm()
+  open.value = false
 }
 </script>
 
@@ -100,11 +133,11 @@ function isDaySelected(day: Weekday) {
                   "
                   @click="toggleDay(day)"
                 >
-                  <IconBoltFill
-                    v-if="isDaySelected(day)"
-                    class="size-3.5"
-                  />
-                  <span class="text-[10px] font-medium leading-none" :class="isDaySelected(day) ? '' : 'mt-1'">
+                  <IconBoltFill v-if="isDaySelected(day)" class="size-3.5" />
+                  <span
+                    class="text-[10px] font-medium leading-none"
+                    :class="isDaySelected(day) ? '' : 'mt-1'"
+                  >
                     {{ WEEKDAY_LABELS[day] }}
                   </span>
                 </button>
@@ -114,17 +147,20 @@ function isDaySelected(day: Weekday) {
 
           <div class="grid gap-2">
             <label class="text-sm font-medium">Goal</label>
-            <BaseNumberStepper
-              v-model="targetCompletions"
-              :min="1"
-              :label="targetLabel"
-            />
+            <div class="flex items-center gap-3">
+              <BaseNumberStepper v-model="targetCompletions" :min="1">
+                <BaseNumberStepperDecreaseButton />
+                <BaseNumberStepperInput />
+                <BaseNumberStepperIncreaseButton />
+              </BaseNumberStepper>
+              <span class="text-muted-foreground text-sm">{{ targetLabel }}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <BaseDialogFooter>
-        <BaseButton>Save</BaseButton>
+        <BaseButton :disabled="!title.trim()" @click="handleSave">Save</BaseButton>
       </BaseDialogFooter>
     </BaseDialogContent>
   </BaseDialog>

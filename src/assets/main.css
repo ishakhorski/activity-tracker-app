@@ -1,6 +1,6 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@import "@/assets/theme.css";
+@import '@/assets/theme.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,9 +9,9 @@
     font-family:
       system-ui,
       -apple-system,
-      "Segoe UI",
+      'Segoe UI',
       Roboto,
-      "Helvetica Neue",
+      'Helvetica Neue',
       Arial,
       sans-serif;
     background-color: var(--background);
@@ -121,12 +121,17 @@
   }
 }
 
-@utility bottom-safe {
-  bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
+@utility px-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), 1rem);
+  padding-right: max(env(safe-area-inset-right, 0px), 1rem);
 }
 
-@utility top-safe {
-  top: max(env(safe-area-inset-top, 0px), 1.5rem);
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 1.5rem);
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
 }
 
 @utility glass-hover {
@@ -134,7 +139,6 @@
     0 4px 20px -1px var(--glass-hover-shadow),
     inset 0 1px 0 0 var(--glass-highlight);
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -1,7 +1,11 @@
-<template>
-  <header class="sticky z-20 p-6 top-safe flex items-center justify-between">
-    <h1 class="font-bold text-2xl">Stats</h1>
-  </header>
+<script setup lang="ts">
+import { PageHeader, PageContent } from '@/components/molecules/page'
+</script>
 
-  <main></main>
+<template>
+  <PageHeader>
+    <h1 class="font-bold text-2xl">Stats</h1>
+  </PageHeader>
+
+  <PageContent />
 </template>
