@@ -1,53 +1,91 @@
-import { ref } from 'vue'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
 import type { Completion } from '@/types/completion'
-import * as completionService from '@/services/completionService'
+import * as completionsService from '@/services/completionsService'
+import { getDateRange } from '@/utils/completions'
 
-const completions = ref<Completion[]>(completionService.getAllCompletions())
+const COMPLETIONS_QUERY_KEY = ['complitions'] as const
 
-export function useCompletions() {
-  function addCompletion(activityId: string, date: string): Completion {
-    const completion = completionService.createCompletion(activityId, date)
-    completions.value.push(completion)
-    return completion
-  }
+// --- Query ---
 
-  function removeCompletion(completionId: string) {
-    const index = completions.value.findIndex((c) => c.id === completionId)
-    if (index >= 0) {
-      const completion = completions.value[index]!
-      completions.value.splice(index, 1)
-      completionService.deleteCompletion(completionId, completion.completedAt)
-    }
-  }
+export const useCompletionsQuery = () => {
+  return useQuery({
+    queryKey: COMPLETIONS_QUERY_KEY,
+    queryFn: async () => {
+      const { from, to } = getDateRange()
+      const response = await completionsService.getCompletionsByDateRange(from, to)
+      return response.data
+    },
+  })
+}
 
-  function getCompletions(activityId: string): Completion[] {
-    return completions.value.filter((c) => c.activityId === activityId)
-  }
+// --- Mutations ---
 
-  function getCompletionsByDateRange(from: string, to: string): Completion[] {
-    return completionService.getCompletionsByDateRange(from, to)
-  }
+export const useCompletionCreateMutation = () => {
+  const queryClient = useQueryClient()
 
-  function getTodayCount(activityId: string): number {
-    const now = new Date()
-    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const dayEnd = new Date(dayStart)
-    dayEnd.setDate(dayEnd.getDate() + 1)
+  const { mutate } = useMutation({
+    mutationFn: ({ activityId, date }: { activityId: string; date: string }) =>
+      completionsService.createCompletion(activityId, date),
+    onMutate: async ({ activityId, date }) => {
+      await queryClient.cancelQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      const previous = queryClient.getQueryData<Completion[]>(COMPLETIONS_QUERY_KEY)
 
-    return completions.value.filter((c) => {
-      if (c.activityId !== activityId) return false
-      const t = new Date(c.completedAt)
-      return t >= dayStart && t < dayEnd
-    }).length
-  }
+      const now = new Date().toISOString()
+      const optimistic: Completion = {
+        id: `temp-${crypto.randomUUID()}`,
+        activityId,
+        completedAt: date,
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      queryClient.setQueryData<Completion[]>(COMPLETIONS_QUERY_KEY, (old) => [
+        ...(old ?? []),
+        optimistic,
+      ])
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(COMPLETIONS_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+    },
+  })
 
   return {
-    completions,
-    addCompletion,
-    removeCompletion,
-    getCompletions,
-    getCompletionsByDateRange,
-    getTodayCount,
+    addCompletion: (activityId: string, date: string) => mutate({ activityId, date }),
   }
+}
+
+export const useCompletionDeleteMutation = () => {
+  const queryClient = useQueryClient()
+
+  const { mutate } = useMutation({
+    mutationFn: (completionId: string) => completionsService.deleteCompletion(completionId),
+    onMutate: async (completionId) => {
+      await queryClient.cancelQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      const previous = queryClient.getQueryData<Completion[]>(COMPLETIONS_QUERY_KEY)
+
+      queryClient.setQueryData<Completion[]>(COMPLETIONS_QUERY_KEY, (old) =>
+        (old ?? []).filter((c) => c.id !== completionId),
+      )
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(COMPLETIONS_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+    },
+  })
+
+  return { removeCompletion: (completionId: string) => mutate(completionId) }
 }

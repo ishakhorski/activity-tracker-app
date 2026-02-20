@@ -1,139 +1,189 @@
-import { computed, ref, watch } from 'vue'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
 import type { Activity } from '@/types/activity'
-import {
-  ACTIVITY_SCHEDULE_TYPE,
-  type Weekday,
-  type ActivitySchedule,
-} from '@/types/activitySchedule'
-import * as activityService from '@/services/activityService'
-import { useCompletions } from './useCompletions'
+import type { ActivitySchedule } from '@/types/activitySchedule'
+import * as activitiesService from '@/services/activitiesService'
 
-const activities = ref<Activity[]>(activityService.getAllActivities())
+const ACTIVITIES_QUERY_KEY = ['activities'] as const
 
-const completedOrder = ref<Map<string, number>>(new Map())
-let completedSeq = 0
+// --- Query ---
 
-// Schedule helpers
-
-export function isScheduledOnDay(activity: Activity, dayOfWeek: number): boolean {
-  const schedule = activity.schedule
-  if (schedule.type === ACTIVITY_SCHEDULE_TYPE.WEEKLY) {
-    return schedule.days.includes(dayOfWeek as Weekday)
-  }
-  return true
-}
-
-export function isScheduledToday(activity: Activity): boolean {
-  return isScheduledOnDay(activity, new Date().getDay())
-}
-
-export function getTargetForDay(activity: Activity, dayOfWeek: number): number {
-  const schedule = activity.schedule
-  if (schedule.type === ACTIVITY_SCHEDULE_TYPE.WEEKLY) {
-    return schedule.days.includes(dayOfWeek as Weekday) ? schedule.targetCompletions : 0
-  }
-  return schedule.targetCompletions
-}
-
-export function useActivities() {
-  const { getTodayCount } = useCompletions()
-
-  const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
-
-  const archivedActivities = computed(() => activities.value.filter((a) => !!a.archivedAt))
-
-  function isTargetMet(activity: Activity): boolean {
-    if (!isScheduledToday(activity)) return false
-    return getTodayCount(activity.id) >= activity.schedule.targetCompletions
-  }
-
-  // 0 = scheduled & not done, 1 = not scheduled today, 2 = completed
-  function getSortGroup(activity: Activity): number {
-    if (isTargetMet(activity)) return 2
-    if (!isScheduledToday(activity)) return 1
-    return 0
-  }
-
-  watch(
-    () => activeActivities.value.map((a) => isTargetMet(a)),
-    (curr, prev) => {
-      activeActivities.value.forEach((a, i) => {
-        const justCompleted = curr[i] && (!prev || !prev[i])
-        if (justCompleted && !completedOrder.value.has(a.id)) {
-          completedOrder.value.set(a.id, completedSeq++)
-        }
-        if (!curr[i]) {
-          completedOrder.value.delete(a.id)
-        }
-      })
+export const useActivitiesQuery = () => {
+  return useQuery({
+    queryKey: ACTIVITIES_QUERY_KEY,
+    queryFn: async () => {
+      const response = await activitiesService.getAllActivities()
+      return response.data
     },
-    { immediate: true },
-  )
+  })
+}
 
-  const sortedActivities = computed(() => {
-    return [...activeActivities.value].sort((a, b) => {
-      const aGroup = getSortGroup(a)
-      const bGroup = getSortGroup(b)
-      if (aGroup !== bGroup) return aGroup - bGroup
-      if (aGroup === 2) {
-        const aOrder = completedOrder.value.get(a.id) ?? 0
-        const bOrder = completedOrder.value.get(b.id) ?? 0
-        return bOrder - aOrder
+// --- Mutations ---
+
+export const useActivityCreateMutation = () => {
+  const queryClient = useQueryClient()
+
+  const { mutate } = useMutation({
+    mutationFn: (data: { title: string; schedule: ActivitySchedule }) =>
+      activitiesService.createActivity(data),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+      const previous = queryClient.getQueryData<Activity[]>(ACTIVITIES_QUERY_KEY)
+
+      const now = new Date().toISOString()
+      const optimistic: Activity = {
+        id: `temp-${crypto.randomUUID()}`,
+        title: data.title,
+        schedule: data.schedule,
+        sortOrder: previous?.length ?? 0,
+        createdAt: now,
+        updatedAt: now,
       }
-      return a.sortOrder - b.sortOrder
-    })
+
+      queryClient.setQueryData<Activity[]>(ACTIVITIES_QUERY_KEY, (old) => [
+        ...(old ?? []),
+        optimistic,
+      ])
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ACTIVITIES_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+    },
   })
 
-  function createActivity(data: { title: string; schedule: ActivitySchedule }): Activity {
-    const activity = activityService.createActivity(data)
-    activities.value.push(activity)
-    return activity
+  return {
+    createActivity: (data: { title: string; schedule: ActivitySchedule }) => mutate(data),
   }
+}
 
-  function updateActivity(id: string, data: Partial<Pick<Activity, 'title' | 'schedule'>>) {
-    const activity = activities.value.find((a) => a.id === id)
-    if (!activity) return
-    Object.assign(activity, { ...data, updatedAt: new Date().toISOString() })
-    activityService.updateActivity(id, data)
-  }
+export const useActivityUpdateMutation = () => {
+  const queryClient = useQueryClient()
 
-  function archiveActivity(id: string) {
-    const activity = activities.value.find((a) => a.id === id)
-    if (activity) {
-      activity.archivedAt = new Date().toISOString()
-      activityService.archiveActivity(id)
-    }
-  }
+  const { mutate } = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: Partial<Pick<Activity, 'title' | 'schedule'>>
+    }) => activitiesService.updateActivity(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+      const previous = queryClient.getQueryData<Activity[]>(ACTIVITIES_QUERY_KEY)
 
-  function unarchiveActivity(id: string) {
-    const activity = activities.value.find((a) => a.id === id)
-    if (activity) {
-      activity.archivedAt = undefined
-      activityService.unarchiveActivity(id)
-    }
-  }
+      queryClient.setQueryData<Activity[]>(ACTIVITIES_QUERY_KEY, (old) =>
+        (old ?? []).map((a) =>
+          a.id === id ? { ...a, ...data, updatedAt: new Date().toISOString() } : a,
+        ),
+      )
 
-  function deleteActivity(id: string) {
-    const index = activities.value.findIndex((a) => a.id === id)
-    if (index >= 0) {
-      activities.value.splice(index, 1)
-      activityService.deleteActivity(id)
-    }
-  }
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ACTIVITIES_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+    },
+  })
 
   return {
-    activities,
-    activeActivities,
-    archivedActivities,
-    sortedActivities,
-    createActivity,
-    updateActivity,
-    archiveActivity,
-    unarchiveActivity,
-    deleteActivity,
-    isTargetMet,
-    isScheduledToday,
-    getSortGroup,
+    updateActivity: (id: string, data: Partial<Pick<Activity, 'title' | 'schedule'>>) =>
+      mutate({ id, data }),
   }
+}
+
+export const useActivityArchiveMutation = () => {
+  const queryClient = useQueryClient()
+
+  const { mutate } = useMutation({
+    mutationFn: (id: string) => activitiesService.archiveActivity(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+      const previous = queryClient.getQueryData<Activity[]>(ACTIVITIES_QUERY_KEY)
+
+      const now = new Date().toISOString()
+      queryClient.setQueryData<Activity[]>(ACTIVITIES_QUERY_KEY, (old) =>
+        (old ?? []).map((a) => (a.id === id ? { ...a, archivedAt: now, updatedAt: now } : a)),
+      )
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ACTIVITIES_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+    },
+  })
+
+  return { archiveActivity: (id: string) => mutate(id) }
+}
+
+export const useActivityUnarchiveMutation = () => {
+  const queryClient = useQueryClient()
+
+  const { mutate } = useMutation({
+    mutationFn: (id: string) => activitiesService.unarchiveActivity(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+      const previous = queryClient.getQueryData<Activity[]>(ACTIVITIES_QUERY_KEY)
+
+      queryClient.setQueryData<Activity[]>(ACTIVITIES_QUERY_KEY, (old) =>
+        (old ?? []).map((a) =>
+          a.id === id ? { ...a, archivedAt: undefined, updatedAt: new Date().toISOString() } : a,
+        ),
+      )
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ACTIVITIES_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+    },
+  })
+
+  return { unarchiveActivity: (id: string) => mutate(id) }
+}
+
+export const useActivityDeleteMutation = () => {
+  const queryClient = useQueryClient()
+
+  const { mutate } = useMutation({
+    mutationFn: (id: string) => activitiesService.deleteActivity(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+      const previous = queryClient.getQueryData<Activity[]>(ACTIVITIES_QUERY_KEY)
+
+      queryClient.setQueryData<Activity[]>(ACTIVITIES_QUERY_KEY, (old) =>
+        (old ?? []).filter((a) => a.id !== id),
+      )
+
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(ACTIVITIES_QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ACTIVITIES_QUERY_KEY })
+    },
+  })
+
+  return { deleteActivity: (id: string) => mutate(id) }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
 
 import { BaseButton } from '@/components/atoms/button'
@@ -12,19 +12,43 @@ import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
 import CreateActivityDialog from '@/components/organisms/CreateActivityDialog.vue'
 import ActivityCard from '@/components/organisms/ActivityCard.vue'
+import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vue'
+import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
+import ActivitiesEmpty from '@/components/organisms/ActivitiesEmpty.vue'
 
 import IconPlus from '@/assets/icons/plus.svg'
 import IconCalendar from '@/assets/icons/calendar.svg'
 import IconList from '@/assets/icons/list.svg'
 import IconCheckmarkStack from '@/assets/icons/checkmark-stack.svg'
 import IconCheckmarkStackFill from '@/assets/icons/checkmark-stack-fill.svg'
-import IconCloudBoltFill from '@/assets/icons/cloud-bolt-fill.svg'
 
-import { useActivities, isScheduledToday } from '@/composables/useActivities'
-import { useCompletions } from '@/composables/useCompletions'
+import {
+  useActivitiesQuery,
+  useActivityArchiveMutation,
+  useActivityDeleteMutation,
+} from '@/composables/useActivities'
+import { isScheduledToday } from '@/utils/activities'
+import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
+import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
 
-const { sortedActivities, isTargetMet, archiveActivity, deleteActivity } = useActivities()
-const { addCompletion, getCompletions } = useCompletions()
+const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery()
+const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery()
+
+const activities = computed(() => activitiesData.value ?? [])
+const completions = computed(() => completionsData.value ?? [])
+
+function getCompletions(activityId: string) {
+  return getCompletionsByActivity(completions.value, activityId)
+}
+
+function getTodayCount(activityId: string) {
+  return getTodayCompletionCount(completions.value, activityId)
+}
+const { addCompletion } = useCompletionCreateMutation()
+const { archiveActivity } = useActivityArchiveMutation()
+const { deleteActivity } = useActivityDeleteMutation()
+
+const loading = computed(() => activitiesLoading.value || completionsLoading.value)
 
 const isCreateDialogOpen = ref(false)
 
@@ -36,6 +60,55 @@ const hideCompleted = computed({
   set: (val: boolean) => (hideDoneQuery.value = val ? 'true' : 'false'),
 })
 
+// --- Sorting & filtering ---
+
+const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
+
+function isTargetMet(activity: (typeof activities.value)[number]): boolean {
+  const count = getTodayCount(activity.id)
+  if (!isScheduledToday(activity)) return count > 0
+  return count >= activity.schedule.targetCompletions
+}
+
+function getSortGroup(activity: (typeof activities.value)[number]): number {
+  if (isTargetMet(activity)) return 2
+  if (!isScheduledToday(activity)) return 1
+  return 0
+}
+
+const completedOrder = ref<Map<string, number>>(new Map())
+let completedSeq = 0
+
+watch(
+  () => activeActivities.value.map((a) => isTargetMet(a)),
+  (curr, prev) => {
+    activeActivities.value.forEach((a, i) => {
+      const justCompleted = curr[i] && (!prev || !prev[i])
+      if (justCompleted && !completedOrder.value.has(a.id)) {
+        completedOrder.value.set(a.id, completedSeq++)
+      }
+      if (!curr[i]) {
+        completedOrder.value.delete(a.id)
+      }
+    })
+  },
+  { immediate: true },
+)
+
+const sortedActivities = computed(() => {
+  return [...activeActivities.value].sort((a, b) => {
+    const aGroup = getSortGroup(a)
+    const bGroup = getSortGroup(b)
+    if (aGroup !== bGroup) return aGroup - bGroup
+    if (aGroup === 2) {
+      const aOrder = completedOrder.value.get(a.id) ?? 0
+      const bOrder = completedOrder.value.get(b.id) ?? 0
+      return bOrder - aOrder
+    }
+    return a.sortOrder - b.sortOrder
+  })
+})
+
 const filteredActivities = computed(() => {
   return sortedActivities.value.filter((activity) => {
     if (showFilter.value === 'today' && !isScheduledToday(activity)) return false
@@ -43,6 +116,11 @@ const filteredActivities = computed(() => {
     return true
   })
 })
+
+function clearFilters() {
+  showFilter.value = 'all'
+  hideCompleted.value = false
+}
 </script>
 
 <template>
@@ -76,25 +154,14 @@ const filteredActivities = computed(() => {
   </PageHeader>
 
   <PageContent>
-    <div
-      v-if="filteredActivities.length === 0"
-      class="flex flex-col items-center justify-center h-full gap-4 pb-16"
-    >
-      <IconCloudBoltFill class="size-16 text-muted-foreground/20 animate-empty-bounce" />
-      <div class="text-center">
-        <p class="text-sm font-medium text-muted-foreground">No activities yet</p>
-        <p class="text-xs text-muted-foreground/60 mt-1">Start tracking your first activity</p>
-      </div>
-      <BaseButton
-        variant="primary"
-        size="medium"
-        class="animate-empty-pulse"
-        @click="isCreateDialogOpen = true"
-      >
-        <IconPlus class="size-4" />
-        <span class="sr-only">Add Activity</span>
-      </BaseButton>
-    </div>
+    <ActivityCardSkeleton v-if="loading" :count="4" />
+
+    <ActivitiesOnboarding
+      v-else-if="sortedActivities.length === 0"
+      @create="isCreateDialogOpen = true"
+    />
+
+    <ActivitiesEmpty v-else-if="filteredActivities.length === 0" @clear-filters="clearFilters" />
 
     <TransitionGroup v-else name="activity-list" tag="div" class="flex flex-col gap-3">
       <ActivityCard
@@ -115,33 +182,5 @@ const filteredActivities = computed(() => {
 <style scoped>
 .activity-list-move {
   transition: transform 0.4s ease;
-}
-
-@keyframes empty-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes empty-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-empty-bounce {
-  animation: empty-bounce 3s ease-in-out infinite;
-}
-
-.animate-empty-pulse {
-  animation: empty-pulse 2s ease-in-out infinite;
 }
 </style>

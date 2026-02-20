@@ -25,9 +25,9 @@ import {
   type Weekday,
   type ActivitySchedule,
 } from '@/types/activitySchedule'
-import { useActivities } from '@/composables/useActivities'
+import { useActivityCreateMutation } from '@/composables/useActivities'
 
-const { createActivity } = useActivities()
+const { createActivity } = useActivityCreateMutation()
 
 const open = defineModel<boolean>('open', { default: false })
 

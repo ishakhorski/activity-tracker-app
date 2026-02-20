@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { PageHeader, PageContent } from '@/components/molecules/page'
+import PageHeader from '@/components/molecules/PageHeader.vue'
+import PageContent from '@/components/molecules/PageContent.vue'
 </script>
 
 <template>
@@ -7,5 +8,5 @@ import { PageHeader, PageContent } from '@/components/molecules/page'
     <h1 class="font-bold text-2xl">Stats</h1>
   </PageHeader>
 
-  <PageContent />
+  <PageContent></PageContent>
 </template>
