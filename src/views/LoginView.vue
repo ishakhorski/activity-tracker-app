@@ -1,36 +1,38 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
-import { useAuth0 } from '@auth0/auth0-vue'
+import type { Component } from "vue";
 
-import IconGoogle from '@/assets/icons/google.svg'
-import IconApple from '@/assets/icons/apple.svg'
-import TallyIcon from '@/components/icons/TallyIcon.vue'
+import { useLoginMutation } from "@/composables/useAuth";
+import { AUTH_CONNECTOR, type AuthConnector } from "@/types/auth";
 
-const { loginWithRedirect, isLoading } = useAuth0()
+import IconTally from "@/assets/icons/tally.svg";
+import IconGoogle from "@/assets/icons/google.svg";
+import IconApple from "@/assets/icons/apple.svg";
 
-const providers: { connection: string; label: string; icon: Component }[] = [
-  { connection: 'google-oauth2', label: 'Continue with Google', icon: IconGoogle },
-  { connection: 'apple', label: 'Continue with Apple', icon: IconApple },
-]
+const { login, isPending } = useLoginMutation();
+
+const providers: { connection: AuthConnector; label: string; icon: Component }[] = [
+  { connection: AUTH_CONNECTOR.GOOGLE, label: "Continue with Google", icon: IconGoogle },
+  { connection: AUTH_CONNECTOR.APPLE, label: "Continue with Apple", icon: IconApple },
+];
 </script>
 
 <template>
-  <div class="w-full max-w-sm flex flex-col items-center gap-10">
-    <TallyIcon class="size-18 text-primary" aria-hidden="true" />
+  <div class="w-full max-w-92 flex flex-col items-center">
+    <IconTally aria-hidden="true" class="tally size-18 text-primary mb-14" />
 
-    <div class="flex flex-col items-center gap-1 login-title">
-      <h1 class="app-name">Tally</h1>
-      <p class="text-sm text-muted-foreground">Every completion counts</p>
+    <div class="flex flex-col items-center gap-1 animate-[fade-in-bottom_0.5s_ease-out_both] mb-10">
+      <h1 class="text-4xl text-primary font-semibold">Tally</h1>
+      <p class="text-sm text-muted-foreground font-light">Track Your Momentum</p>
     </div>
 
-    <div class="flex flex-col gap-3 w-full">
-      <p class="text-xs text-center text-muted-foreground -mb-1">Sign in to continue</p>
+    <p class="text-xs text-center text-muted-foreground mb-2">Sign in to continue</p>
+    <div class="w-full flex flex-col gap-3 mb-6">
       <button
         v-for="provider in providers"
         :key="provider.connection"
-        :disabled="isLoading"
+        :disabled="isPending"
         class="glass flex items-center justify-center gap-3 w-full rounded-2xl px-5 py-3.5 text-[15px] font-medium text-foreground hover:glass-hover active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 transition-all"
-        @click="loginWithRedirect({ authorizationParams: { connection: provider.connection } })"
+        @click="login(provider.connection)"
       >
         <component :is="provider.icon" class="size-6 shrink-0" />
         <span>{{ provider.label }}</span>
@@ -40,22 +42,30 @@ const providers: { connection: string; label: string; icon: Component }[] = [
 </template>
 
 <style scoped>
-.login-title {
-  animation: fade-up 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.3s both;
+.tally :deep(path) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+
+  --draw: 0.25s;
+  --gap: 0.1s;
+  --step: calc(var(--draw) + var(--gap));
+
+  animation: tally-draw var(--draw) ease-in-out forwards;
+  animation-delay: calc(var(--i) * var(--step));
 }
 
-.app-name {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  color: var(--primary);
+@keyframes tally-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
+</style>
 
-@keyframes fade-up {
+<style>
+@keyframes fade-in-bottom {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;

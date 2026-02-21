@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 
-import IconHeart from '@/assets/icons/heart.svg'
-import IconChart from '@/assets/icons/chart.svg'
+import IconTally from "@/assets/icons/tally.svg";
+import IconChart from "@/assets/icons/chart.svg";
 
-const route = useRoute()
+const route = useRoute();
 
 const items = [
-  { to: '/activities', label: 'Activities', icon: IconHeart },
-  { to: '/stats', label: 'Stats', icon: IconChart },
-]
+  { to: "/activities", label: "Activities", icon: IconTally },
+  { to: "/stats", label: "Stats", icon: IconChart },
+];
 
 const activeIndex = computed(() => {
-  const index = items.findIndex((item) => route.path.startsWith(item.to))
-  return index === -1 ? 0 : index
-})
+  const index = items.findIndex((item) => route.path.startsWith(item.to));
+  return index === -1 ? 0 : index;
+});
 </script>
 
 <template>

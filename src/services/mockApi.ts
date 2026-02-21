@@ -80,7 +80,6 @@ const routes: Route[] = [
         id: crypto.randomUUID(),
         title: data.title,
         schedule: data.schedule,
-        sortOrder: all.length,
         createdAt: now,
         updatedAt: now,
       }

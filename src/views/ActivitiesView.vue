@@ -1,125 +1,125 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouteQuery } from '@vueuse/router'
+import { ref, computed, watch } from "vue";
+import { useRouteQuery } from "@vueuse/router";
 
-import { BaseButton } from '@/components/atoms/button'
+import { BaseButton } from "@/components/atoms/button";
 import {
   BaseSegmentedControl,
   BaseSegmentedControlButton,
-} from '@/components/atoms/segmented-control'
-import { BaseToggleButton } from '@/components/atoms/toggle-button'
-import PageHeader from '@/components/molecules/PageHeader.vue'
-import PageContent from '@/components/molecules/PageContent.vue'
-import CreateActivityDialog from '@/components/organisms/CreateActivityDialog.vue'
-import ActivityCard from '@/components/organisms/ActivityCard.vue'
-import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vue'
-import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
-import ActivitiesEmpty from '@/components/organisms/ActivitiesEmpty.vue'
+} from "@/components/atoms/segmented-control";
+import { BaseToggleButton } from "@/components/atoms/toggle-button";
+import PageHeader from "@/components/molecules/PageHeader.vue";
+import PageContent from "@/components/molecules/PageContent.vue";
+import CreateActivityDialog from "@/components/organisms/CreateActivityDialog.vue";
+import ActivityCard from "@/components/organisms/ActivityCard.vue";
+import ActivityCardSkeleton from "@/components/organisms/ActivityCardSkeleton.vue";
+import ActivitiesOnboarding from "@/components/organisms/ActivitiesOnboarding.vue";
+import ActivitiesEmpty from "@/components/organisms/ActivitiesEmpty.vue";
 
-import IconPlus from '@/assets/icons/plus.svg'
-import IconCalendar from '@/assets/icons/calendar.svg'
-import IconList from '@/assets/icons/list.svg'
-import IconCheckmarkStack from '@/assets/icons/checkmark-stack.svg'
-import IconCheckmarkStackFill from '@/assets/icons/checkmark-stack-fill.svg'
+import IconPlus from "@/assets/icons/plus.svg";
+import IconCalendar from "@/assets/icons/calendar.svg";
+import IconList from "@/assets/icons/list.svg";
+import IconCheckmarkStack from "@/assets/icons/checkmark-stack.svg";
+import IconCheckmarkStackFill from "@/assets/icons/checkmark-stack-fill.svg";
 
 import {
   useActivitiesQuery,
   useActivityArchiveMutation,
   useActivityDeleteMutation,
-} from '@/composables/useActivities'
-import { isScheduledToday } from '@/utils/activities'
-import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
-import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
+} from "@/composables/useActivities";
+import { isScheduledToday } from "@/utils/activities";
+import { useCompletionsQuery, useCompletionCreateMutation } from "@/composables/useCompletions";
+import { getCompletionsByActivity, getTodayCompletionCount } from "@/utils/completions";
 
-const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery()
-const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery()
+const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery();
+const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery();
 
-const activities = computed(() => activitiesData.value ?? [])
-const completions = computed(() => completionsData.value ?? [])
+const activities = computed(() => activitiesData.value ?? []);
+const completions = computed(() => completionsData.value ?? []);
 
 function getCompletions(activityId: string) {
-  return getCompletionsByActivity(completions.value, activityId)
+  return getCompletionsByActivity(completions.value, activityId);
 }
 
 function getTodayCount(activityId: string) {
-  return getTodayCompletionCount(completions.value, activityId)
+  return getTodayCompletionCount(completions.value, activityId);
 }
-const { addCompletion } = useCompletionCreateMutation()
-const { archiveActivity } = useActivityArchiveMutation()
-const { deleteActivity } = useActivityDeleteMutation()
+const { addCompletion } = useCompletionCreateMutation();
+const { archiveActivity } = useActivityArchiveMutation();
+const { deleteActivity } = useActivityDeleteMutation();
 
-const loading = computed(() => activitiesLoading.value || completionsLoading.value)
+const loading = computed(() => activitiesLoading.value || completionsLoading.value);
 
-const isCreateDialogOpen = ref(false)
+const isCreateDialogOpen = ref(false);
 
-const showFilter = useRouteQuery<string>('show', 'all')
+const showFilter = useRouteQuery<string>("show", "all");
 
-const hideDoneQuery = useRouteQuery<string>('hideDone', 'false')
+const hideDoneQuery = useRouteQuery<string>("hideDone", "false");
 const hideCompleted = computed({
-  get: () => hideDoneQuery.value === 'true',
-  set: (val: boolean) => (hideDoneQuery.value = val ? 'true' : 'false'),
-})
+  get: () => hideDoneQuery.value === "true",
+  set: (val: boolean) => (hideDoneQuery.value = val ? "true" : "false"),
+});
 
 // --- Sorting & filtering ---
 
-const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
+const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt));
 
 function isTargetMet(activity: (typeof activities.value)[number]): boolean {
-  const count = getTodayCount(activity.id)
-  if (!isScheduledToday(activity)) return count > 0
-  return count >= activity.schedule.targetCompletions
+  const count = getTodayCount(activity.id);
+  if (!isScheduledToday(activity)) return count > 0;
+  return count >= activity.schedule.targetCompletions;
 }
 
 function getSortGroup(activity: (typeof activities.value)[number]): number {
-  if (isTargetMet(activity)) return 2
-  if (!isScheduledToday(activity)) return 1
-  return 0
+  if (isTargetMet(activity)) return 2;
+  if (!isScheduledToday(activity)) return 1;
+  return 0;
 }
 
-const completedOrder = ref<Map<string, number>>(new Map())
-let completedSeq = 0
+const completedOrder = ref<Map<string, number>>(new Map());
+let completedSeq = 0;
 
 watch(
   () => activeActivities.value.map((a) => isTargetMet(a)),
   (curr, prev) => {
     activeActivities.value.forEach((a, i) => {
-      const justCompleted = curr[i] && (!prev || !prev[i])
+      const justCompleted = curr[i] && (!prev || !prev[i]);
       if (justCompleted && !completedOrder.value.has(a.id)) {
-        completedOrder.value.set(a.id, completedSeq++)
+        completedOrder.value.set(a.id, completedSeq++);
       }
       if (!curr[i]) {
-        completedOrder.value.delete(a.id)
+        completedOrder.value.delete(a.id);
       }
-    })
+    });
   },
   { immediate: true },
-)
+);
 
 const sortedActivities = computed(() => {
   return [...activeActivities.value].sort((a, b) => {
-    const aGroup = getSortGroup(a)
-    const bGroup = getSortGroup(b)
-    if (aGroup !== bGroup) return aGroup - bGroup
+    const aGroup = getSortGroup(a);
+    const bGroup = getSortGroup(b);
+    if (aGroup !== bGroup) return aGroup - bGroup;
     if (aGroup === 2) {
-      const aOrder = completedOrder.value.get(a.id) ?? 0
-      const bOrder = completedOrder.value.get(b.id) ?? 0
-      return bOrder - aOrder
+      const aOrder = completedOrder.value.get(a.id) ?? 0;
+      const bOrder = completedOrder.value.get(b.id) ?? 0;
+      return bOrder - aOrder;
     }
-    return a.sortOrder - b.sortOrder
-  })
-})
+    return 0;
+  });
+});
 
 const filteredActivities = computed(() => {
   return sortedActivities.value.filter((activity) => {
-    if (showFilter.value === 'today' && !isScheduledToday(activity)) return false
-    if (hideCompleted.value && isTargetMet(activity)) return false
-    return true
-  })
-})
+    if (showFilter.value === "today" && !isScheduledToday(activity)) return false;
+    if (hideCompleted.value && isTargetMet(activity)) return false;
+    return true;
+  });
+});
 
 function clearFilters() {
-  showFilter.value = 'all'
-  hideCompleted.value = false
+  showFilter.value = "all";
+  hideCompleted.value = false;
 }
 </script>
 

@@ -11,7 +11,7 @@
           </div>
         </div>
       </div>
-      <div class="skeleton h-12 w-12 rounded-full" />
+      <div class="skeleton h-12 w-13.5 rounded-full" />
     </div>
   </div>
 </template>
@@ -19,10 +19,10 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    count?: number
+    count?: number;
   }>(),
   { count: 4 },
-)
+);
 </script>
 
 <style scoped>

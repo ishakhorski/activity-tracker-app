@@ -1,10 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
-// import { authGuard } from "@auth0/auth0-vue";
+import { createRouter, createWebHistory } from "vue-router";
 
-declare module 'vue-router' {
+import { AUTH_ROLE, type AuthRole } from "@/types/auth";
+
+declare module "vue-router" {
   interface RouteMeta {
-    layout?: string
-    public?: boolean
+    layout?: string;
+    roles?: AuthRole[];
   }
 }
 
@@ -12,33 +13,28 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/auth/login',
-      name: 'login',
-      component: () => import('@/views/LoginView.vue'),
-      meta: { public: true, layout: 'auth' },
+      path: "/auth/login",
+      name: "login",
+      component: () => import("@/views/LoginView.vue"),
+      meta: { layout: "auth", roles: [AUTH_ROLE.PUBLIC] },
     },
     {
-      path: '/',
-      redirect: '/activities',
+      path: "/",
+      redirect: "/activities",
     },
     {
-      path: '/activities',
-      name: 'activities-view',
-      component: () => import('@/views/ActivitiesView.vue'),
-      meta: { layout: 'default' },
+      path: "/activities",
+      name: "activities-view",
+      component: () => import("@/views/ActivitiesView.vue"),
+      meta: { layout: "default", roles: [AUTH_ROLE.USER] },
     },
     {
-      path: '/stats',
-      name: 'stats-view',
-      component: () => import('@/views/StatsView.vue'),
-      meta: { layout: 'default' },
+      path: "/stats",
+      name: "stats-view",
+      component: () => import("@/views/StatsView.vue"),
+      meta: { layout: "default", roles: [AUTH_ROLE.USER] },
     },
   ],
-})
+});
 
-// router.beforeEach((to) => {
-//   if (to.meta.public) return true;
-//   return authGuard(to);
-// });
-
-export default router
+export default router;
