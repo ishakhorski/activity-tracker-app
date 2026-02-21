@@ -2,7 +2,7 @@ import { type InjectionKey, type Ref } from 'vue'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 export const toggleButtonVariation = cva(
-  'glass inline-flex items-center gap-1 font-medium rounded-full transition-all cursor-pointer outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 text-muted-foreground data-[state=on]:bg-primary/15 data-[state=on]:text-primary',
+  'glass inline-flex items-center gap-1 font-medium rounded-full transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 text-muted-foreground data-[state=on]:bg-primary/15 data-[state=on]:text-primary',
   {
     variants: {
       size: {

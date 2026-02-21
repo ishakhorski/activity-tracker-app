@@ -10,7 +10,7 @@ import AppNavigationMenu from '@/components/organisms/AppNavigationMenu.vue'
   </div>
 </template>
 
-<style scoped>
+<style>
 .nav-position {
   bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
 }

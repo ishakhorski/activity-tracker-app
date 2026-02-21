@@ -1,31 +1,9 @@
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-}
-
-export interface PaginationParams {
-  limit?: number
-  offset?: number
-}
+import { HttpError } from './httpError'
 
 export interface RequestOptions {
   headers?: Record<string, string>
   params?: Record<string, string>
   signal?: AbortSignal
-}
-
-export class HttpError extends Error {
-  readonly status: number
-  readonly statusText: string
-  readonly body: unknown
-
-  constructor(status: number, statusText: string, body: unknown) {
-    super(`HTTP ${status}: ${statusText}`)
-    this.name = 'HttpError'
-    this.status = status
-    this.statusText = statusText
-    this.body = body
-  }
 }
 
 export class HttpClient {
@@ -115,5 +93,3 @@ export class HttpClient {
     return url.toString()
   }
 }
-
-export const http = new HttpClient(import.meta.env.VITE_API_BASE_URL ?? '')

@@ -4,13 +4,14 @@ export interface Activity {
   id: string
   title: string
   description?: string
+  schedule: ActivitySchedule
   createdAt: string
   updatedAt: string
   archivedAt?: string
-
-  // Scheduling
-  schedule: ActivitySchedule
-
-  // Ordering
-  sortOrder: number // for drag-and-drop positioning
 }
+
+export type CreateActivity = Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>
+
+export type UpdateActivity = Partial<
+  Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>
+>

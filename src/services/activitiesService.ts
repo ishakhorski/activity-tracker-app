@@ -1,32 +1,27 @@
-import { http, type PaginatedResponse, type PaginationParams } from './http'
+import { http } from './http'
 
-import type { Activity } from '@/types/activity'
-import type { ActivitySchedule } from '@/types/activitySchedule'
+import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
 
 export const getAllActivities = (
-  pagination: PaginationParams = { limit: 100, offset: 0 },
-): Promise<PaginatedResponse<Activity>> => {
-  const params: Record<string, string> = {}
-  params.limit = String(pagination.limit)
-  params.offset = String(pagination.offset)
-  return http.get<PaginatedResponse<Activity>>('/activities', { params })
+  pagination: { limit?: number; offset?: number } = {},
+): Promise<{ data: Activity[]; total: number }> => {
+  const { limit = 100, offset = 0 } = pagination
+  const params: Record<string, string> = {
+    limit: String(limit),
+    offset: String(offset),
+  }
+  return http.get<{ data: Activity[]; total: number }>('/activities', { params })
 }
 
 export const getActivityById = (id: string): Promise<Activity> => {
   return http.get<Activity>(`/activities/${id}`)
 }
 
-export const createActivity = (data: {
-  title: string
-  schedule: ActivitySchedule
-}): Promise<Activity> => {
+export const createActivity = (data: CreateActivity): Promise<Activity> => {
   return http.post<Activity>('/activities', data)
 }
 
-export const updateActivity = (
-  id: string,
-  data: Partial<Pick<Activity, 'title' | 'schedule'>>,
-): Promise<Activity> => {
+export const updateActivity = (id: string, data: UpdateActivity): Promise<Activity> => {
   return http.patch<Activity>(`/activities/${id}`, data)
 }
 

@@ -33,19 +33,9 @@ const activeIndex = computed(() => {
         class="relative z-10 w-20 h-14 flex flex-col items-center justify-center rounded-full text-xs font-medium transition-colors duration-150"
         :class="activeIndex === index ? 'text-primary' : ''"
       >
-        <component
-          :is="item.icon"
-          class="size-6"
-          :class="{ 'heart-active': item.to === '/activities' && activeIndex === index }"
-        />
+        <component :is="item.icon" class="size-6" />
         {{ item.label }}
       </RouterLink>
     </div>
   </nav>
 </template>
-
-<style scoped>
-.heart-active :deep(path:last-child) {
-  fill: var(--destructive);
-}
-</style>

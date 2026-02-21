@@ -98,7 +98,7 @@ function handleSave() {
             v-model="title"
             type="text"
             placeholder="e.g. Morning Run"
-            class="h-10 w-full rounded-lg border border-border bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+            class="h-10 w-full rounded-lg border border-border bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
 
@@ -125,7 +125,10 @@ function handleSave() {
                 <button
                   v-for="day in WEEKDAYS_ORDERED"
                   :key="day"
-                  class="flex flex-col items-center justify-center flex-1 aspect-square rounded-xl cursor-pointer transition-all active:scale-90"
+                  type="button"
+                  :aria-pressed="isDaySelected(day)"
+                  :aria-label="WEEKDAY_LABELS[day]"
+                  class="flex flex-col items-center justify-center flex-1 aspect-square rounded-xl cursor-pointer transition-all active:scale-90 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   :class="
                     isDaySelected(day)
                       ? 'glass bg-primary/15 text-primary border-primary/20'

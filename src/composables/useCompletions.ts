@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
-import type { Completion } from '@/types/completion'
-import * as completionsService from '@/services/completionsService'
+import type { Completion, CreateCompletion } from '@/types/completion'
+import {
+  getCompletionsByDateRange,
+  createCompletion,
+  deleteCompletion,
+} from '@/services/completionsService'
 import { getDateRange } from '@/utils/completions'
 
 const COMPLETIONS_QUERY_KEY = ['complitions'] as const
@@ -13,7 +17,7 @@ export const useCompletionsQuery = () => {
     queryKey: COMPLETIONS_QUERY_KEY,
     queryFn: async () => {
       const { from, to } = getDateRange()
-      const response = await completionsService.getCompletionsByDateRange(from, to)
+      const response = await getCompletionsByDateRange(from, to)
       return response.data
     },
   })
@@ -25,17 +29,16 @@ export const useCompletionCreateMutation = () => {
   const queryClient = useQueryClient()
 
   const { mutate } = useMutation({
-    mutationFn: ({ activityId, date }: { activityId: string; date: string }) =>
-      completionsService.createCompletion(activityId, date),
-    onMutate: async ({ activityId, date }) => {
+    mutationFn: (data: CreateCompletion) => createCompletion(data),
+    onMutate: async (data: CreateCompletion) => {
       await queryClient.cancelQueries({ queryKey: COMPLETIONS_QUERY_KEY })
       const previous = queryClient.getQueryData<Completion[]>(COMPLETIONS_QUERY_KEY)
 
       const now = new Date().toISOString()
       const optimistic: Completion = {
         id: `temp-${crypto.randomUUID()}`,
-        activityId,
-        completedAt: date,
+        activityId: data.activityId,
+        completedAt: data.completedAt,
         createdAt: now,
         updatedAt: now,
       }
@@ -58,7 +61,7 @@ export const useCompletionCreateMutation = () => {
   })
 
   return {
-    addCompletion: (activityId: string, date: string) => mutate({ activityId, date }),
+    addCompletion: (data: CreateCompletion) => mutate(data),
   }
 }
 
@@ -66,7 +69,7 @@ export const useCompletionDeleteMutation = () => {
   const queryClient = useQueryClient()
 
   const { mutate } = useMutation({
-    mutationFn: (completionId: string) => completionsService.deleteCompletion(completionId),
+    mutationFn: (completionId: string) => deleteCompletion(completionId),
     onMutate: async (completionId) => {
       await queryClient.cancelQueries({ queryKey: COMPLETIONS_QUERY_KEY })
       const previous = queryClient.getQueryData<Completion[]>(COMPLETIONS_QUERY_KEY)

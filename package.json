@@ -1,5 +1,5 @@
 {
-  "name": "vpn-setup-guide2",
+  "name": "notch",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,6 +15,7 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "@auth0/auth0-vue": "^2.5.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/vue-query": "^5.92.9",
     "@vueuse/core": "^14.2.0",

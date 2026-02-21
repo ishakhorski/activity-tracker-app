@@ -1,10 +1,10 @@
 export interface Completion {
-  id: string // UUID
-  activityId: string // foreign key to Activity
+  id: string
+  activityId: string
   completedAt: string
+  note?: string
   createdAt: string
   updatedAt: string
-
-  // Optional metadata
-  note?: string // optional note for this completion
 }
+
+export type CreateCompletion = Omit<Completion, 'id' | 'createdAt' | 'updatedAt'>

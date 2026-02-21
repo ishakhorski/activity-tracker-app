@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
 export const baseDialogOverlayVariation = cva(
-  'fixed inset-0 z-50 bg-black/5 backdrop-blur-[2px] data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out',
+  'fixed inset-0 z-50 bg-foreground/8 dark:bg-foreground/18 backdrop-blur-sm data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out',
 )
 
 export const baseDialogContentVariation = cva(
@@ -48,7 +48,7 @@ export const baseDialogTitleVariation = cva('text-lg font-semibold leading-none 
 export const baseDialogDescriptionVariation = cva('text-sm text-muted-foreground')
 
 export const baseDialogCloseButtonVariation = cva(
-  'absolute top-4 right-4 rounded-md p-1 opacity-70 outline-none transition-opacity cursor-pointer hover:opacity-100 active:scale-90 active:opacity-50 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
+  'absolute top-4 right-4 rounded-md p-1 opacity-70 outline-none transition-opacity cursor-pointer hover:opacity-100 active:scale-90 active:opacity-50 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
 )
 
 export { default as BaseDialog } from './BaseDialog.vue'

@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const layouts: Record<string, Component> = {
+  auth: defineAsyncComponent(() => import('@/layouts/AuthLayout.vue')),
   default: defineAsyncComponent(() => import('@/layouts/DefaultLayout.vue')),
 }
 </script>

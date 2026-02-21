@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 
 @import '@/assets/theme.css';
+@import '@/assets/animations.css';
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&: is(.dark *));
 
 @layer base {
   body {
@@ -50,22 +51,17 @@
   }
 }
 
-@keyframes accordion-down {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--reka-accordion-content-height);
-  }
+@utility px-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), 1rem);
+  padding-right: max(env(safe-area-inset-right, 0px), 1rem);
 }
 
-@keyframes accordion-up {
-  from {
-    height: var(--reka-accordion-content-height);
-  }
-  to {
-    height: 0;
-  }
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 1.5rem);
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
 }
 
 @utility glass {
@@ -79,59 +75,6 @@
   transition:
     box-shadow 0.3s ease,
     background-color 0.3s ease;
-}
-
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes overlay-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes content-in {
-  from {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes content-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(100%);
-  }
-}
-
-@utility px-safe {
-  padding-left: max(env(safe-area-inset-left, 0px), 1rem);
-  padding-right: max(env(safe-area-inset-right, 0px), 1rem);
-}
-
-@utility pt-safe {
-  padding-top: max(env(safe-area-inset-top, 0px), 1.5rem);
-}
-
-@utility pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
 }
 
 @utility glass-hover {

@@ -97,8 +97,9 @@ function handleTrack() {
             {{ day.weekday }}
           </span>
           <button
-            class="relative w-7 h-7 rounded-md overflow-hidden cursor-pointer transition-transform active:scale-90"
+            class="relative w-7 h-7 rounded-md overflow-hidden cursor-pointer transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             :class="day.isScheduled ? 'bg-foreground/5' : 'bg-foreground/[0.02]'"
+            :aria-label="`${day.isToday ? 'Today' : day.weekday + ' ' + day.date}: ${day.count}${day.dayTarget > 0 ? ' of ' + day.dayTarget : ''} completions`"
             @click="emit('complete', activity.id, day.dayStart.toISOString())"
           >
             <div
@@ -116,10 +117,10 @@ function handleTrack() {
               class="relative z-1 flex items-center justify-center w-full h-full text-[10px] font-medium"
               :class="
                 !day.isScheduled
-                  ? 'text-primary/40'
+                  ? 'text-muted-foreground'
                   : day.count >= day.dayTarget
                     ? 'text-primary'
-                    : 'text-primary/60'
+                    : 'text-primary/75'
               "
             >
               {{ day.count }}
@@ -128,7 +129,7 @@ function handleTrack() {
               v-else-if="day.isScheduled"
               class="relative z-1 flex items-center justify-center w-full h-full text-muted-foreground/30"
             >
-              <IconBolt class="h-3 w-auto" />
+              <IconBolt class="h-3 w-auto" aria-hidden="true" />
             </span>
           </button>
           <span
@@ -142,12 +143,7 @@ function handleTrack() {
     </div>
 
     <div class="track-btn-wrap" :class="trackAnimKey > 0 ? 'is-animated' : ''" :key="trackAnimKey">
-      <BaseButton
-        size="large"
-        :variant="targetMet ? 'primary' : 'secondary'"
-        :class="targetMet ? 'text-red-500 bg-red-500/15 border-red-500/20 hover:bg-red-500/25' : ''"
-        @click="handleTrack"
-      >
+      <BaseButton size="large" :variant="targetMet ? 'primary' : 'secondary'" @click="handleTrack">
         <IconBoltFill v-if="targetMet" class="size-5 bolt-icon" />
         <IconBolt v-else class="size-5 bolt-icon" />
         <span class="sr-only">Complete {{ activity.title }}</span>
@@ -215,7 +211,11 @@ function handleTrack() {
   position: absolute;
   inset: -12px;
   border-radius: 9999px;
-  background: radial-gradient(circle, oklch(0.65 0.2 25 / 0.45) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 45%, transparent) 0%,
+    transparent 70%
+  );
   pointer-events: none;
   z-index: 0;
   animation: glow-flash 0.5s ease-out forwards;
