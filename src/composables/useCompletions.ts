@@ -39,6 +39,7 @@ export const useCompletionCreateMutation = () => {
         id: `temp-${crypto.randomUUID()}`,
         activityId: data.activityId,
         completedAt: data.completedAt,
+        note: data.note,
         createdAt: now,
         updatedAt: now,
       }

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouteQuery } from "@vueuse/router";
 
-import { BaseButton } from "@/components/atoms/button";
 import {
   BaseSegmentedControl,
   BaseSegmentedControlButton,
@@ -10,13 +9,11 @@ import {
 import { BaseToggleButton } from "@/components/atoms/toggle-button";
 import PageHeader from "@/components/molecules/PageHeader.vue";
 import PageContent from "@/components/molecules/PageContent.vue";
-import CreateActivityDialog from "@/components/organisms/CreateActivityDialog.vue";
 import ActivityCard from "@/components/organisms/ActivityCard.vue";
 import ActivityCardSkeleton from "@/components/organisms/ActivityCardSkeleton.vue";
 import ActivitiesOnboarding from "@/components/organisms/ActivitiesOnboarding.vue";
 import ActivitiesEmpty from "@/components/organisms/ActivitiesEmpty.vue";
 
-import IconPlus from "@/assets/icons/plus.svg";
 import IconCalendar from "@/assets/icons/calendar.svg";
 import IconList from "@/assets/icons/list.svg";
 import IconCheckmarkStack from "@/assets/icons/checkmark-stack.svg";
@@ -30,6 +27,7 @@ import {
 import { isScheduledToday } from "@/utils/activities";
 import { useCompletionsQuery, useCompletionCreateMutation } from "@/composables/useCompletions";
 import { getCompletionsByActivity, getTodayCompletionCount } from "@/utils/completions";
+import { useCreateActivityDialog } from "@/composables/useCreateActivityDialog";
 
 const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery();
 const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery();
@@ -50,7 +48,7 @@ const { deleteActivity } = useActivityDeleteMutation();
 
 const loading = computed(() => activitiesLoading.value || completionsLoading.value);
 
-const isCreateDialogOpen = ref(false);
+const { openCreateActivityDialog } = useCreateActivityDialog();
 
 const showFilter = useRouteQuery<string>("show", "all");
 
@@ -127,10 +125,6 @@ function clearFilters() {
   <PageHeader>
     <div class="flex items-center justify-between">
       <h1 class="font-bold text-2xl">Activities</h1>
-      <BaseButton variant="secondary" @click="isCreateDialogOpen = true">
-        <IconPlus class="size-4" />
-        <span class="sr-only">Add Activity</span>
-      </BaseButton>
     </div>
 
     <div class="flex items-center gap-2">
@@ -158,7 +152,7 @@ function clearFilters() {
 
     <ActivitiesOnboarding
       v-else-if="sortedActivities.length === 0"
-      @create="isCreateDialogOpen = true"
+      @create="openCreateActivityDialog"
     />
 
     <ActivitiesEmpty v-else-if="filteredActivities.length === 0" @clear-filters="clearFilters" />
@@ -176,7 +170,7 @@ function clearFilters() {
     </TransitionGroup>
   </PageContent>
 
-  <CreateActivityDialog v-model:open="isCreateDialogOpen" />
+
 </template>
 
 <style scoped>

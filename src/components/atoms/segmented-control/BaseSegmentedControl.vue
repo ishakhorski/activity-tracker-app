@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type HTMLAttributes, provide, ref } from 'vue'
+import { type HTMLAttributes, computed, provide, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import {
@@ -39,6 +39,24 @@ function select(value: string) {
   modelValue.value = value
 }
 
+const activeIndex = computed(() => {
+  const idx = values.value.indexOf(modelValue.value)
+  return idx === -1 ? 0 : idx
+})
+
+const indicatorGap = computed(() => (props.size === 'large' ? 4 : 2))
+
+const indicatorStyle = computed(() => {
+  const gap = indicatorGap.value
+  return {
+    top: `${gap}px`,
+    bottom: `${gap}px`,
+    left: `${gap}px`,
+    width: `calc((100% - ${gap * 2}px) / ${values.value.length})`,
+    transform: `translateX(${activeIndex.value * 100}%)`,
+  }
+})
+
 provide(SEGMENTED_CONTROL_CONTEXT_KEY, {
   modelValue,
   size: props.size,
@@ -52,8 +70,14 @@ provide(SEGMENTED_CONTROL_CONTEXT_KEY, {
 <template>
   <div
     role="tablist"
-    :class="twMerge(segmentedControlVariation({ size: props.size }), props.class)"
+    :class="twMerge('relative', segmentedControlVariation({ size: props.size }), props.class)"
   >
+    <div
+      v-if="values.length > 0"
+      aria-hidden="true"
+      class="pointer-events-none absolute rounded-full glass bg-primary/15 ring-1 ring-white/20 transition-transform duration-300 ease-out"
+      :style="indicatorStyle"
+    />
     <slot />
   </div>
 </template>

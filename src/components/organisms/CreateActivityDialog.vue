@@ -9,6 +9,7 @@ import {
   BaseDialogFooter,
 } from '@/components/atoms/dialog'
 import { BaseButton } from '@/components/atoms/button'
+import { BaseInput } from '@/components/atoms/input'
 import {
   BaseNumberStepper,
   BaseNumberStepperDecreaseButton,
@@ -93,12 +94,11 @@ function handleSave() {
       <div class="grid gap-4">
         <div class="grid gap-2">
           <label for="activity-title" class="text-sm font-medium">Title</label>
-          <input
+          <BaseInput
             id="activity-title"
             v-model="title"
             type="text"
             placeholder="e.g. Morning Run"
-            class="h-10 w-full rounded-lg border border-border bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
 

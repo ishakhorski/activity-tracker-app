@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { onLongPress } from "@vueuse/core";
 
 import { BaseButton } from "@/components/atoms/button";
 import IconBolt from "@/assets/icons/bolt.svg";
 import IconBoltFill from "@/assets/icons/bolt-fill.svg";
+import NoteCompletionDialog from "@/components/organisms/NoteCompletionDialog.vue";
 
 import { getTargetForDay as getTargetForDayFn } from "@/utils/activities";
 
@@ -66,10 +68,39 @@ const todayTarget = computed(() => todayData.value?.dayTarget ?? 0);
 const targetMet = computed(() => todayTarget.value > 0 && todayCount.value >= todayTarget.value);
 
 const trackAnimKey = ref(0);
+const trackBtnWrapRef = ref<HTMLDivElement | null>(null);
+const longPressActivated = ref(false);
+const noteDialogOpen = ref(false);
+const pendingCompletedAt = ref<string | null>(null);
 
 function handleTrack() {
+  if (longPressActivated.value) {
+    longPressActivated.value = false;
+    return;
+  }
   trackAnimKey.value++;
   emit("complete", { activityId: props.activity.id, completedAt: new Date().toISOString() });
+}
+
+onLongPress(
+  trackBtnWrapRef,
+  () => {
+    longPressActivated.value = true;
+    pendingCompletedAt.value = new Date().toISOString();
+    noteDialogOpen.value = true;
+  },
+  { delay: 600, distanceThreshold: 8 },
+);
+
+function handleNoteConfirm(note: string) {
+  if (!pendingCompletedAt.value) return;
+  trackAnimKey.value++;
+  emit("complete", {
+    activityId: props.activity.id,
+    completedAt: pendingCompletedAt.value,
+    note: note || undefined,
+  });
+  pendingCompletedAt.value = null;
 }
 </script>
 
@@ -100,7 +131,9 @@ function handleTrack() {
             class="relative w-7 h-7 rounded-md overflow-hidden cursor-pointer transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             :class="day.isScheduled ? 'bg-foreground/5' : 'bg-foreground/[0.02]'"
             :aria-label="`${day.isToday ? 'Today' : day.weekday + ' ' + day.date}: ${day.count}${day.dayTarget > 0 ? ' of ' + day.dayTarget : ''} completions`"
-            @click="emit('complete', { activityId: activity.id, completedAt: day.dayStart.toISOString() })"
+            @click="
+              emit('complete', { activityId: activity.id, completedAt: day.dayStart.toISOString() })
+            "
           >
             <div
               v-if="day.count > 0 && day.dayTarget > 0"
@@ -142,14 +175,34 @@ function handleTrack() {
       </div>
     </div>
 
-    <div class="track-btn-wrap" :class="trackAnimKey > 0 ? 'is-animated' : ''" :key="trackAnimKey">
-      <BaseButton size="large" :variant="targetMet ? 'primary' : 'secondary'" @click="handleTrack">
-        <IconBoltFill v-if="targetMet" class="size-5 bolt-icon" />
-        <IconBolt v-else class="size-5 bolt-icon" />
-        <span class="sr-only">Complete {{ activity.title }}</span>
-      </BaseButton>
-      <div v-if="trackAnimKey > 0" class="track-anim-layer" />
+    <div class="relative flex flex-col items-center gap-1">
+      <div
+        ref="trackBtnWrapRef"
+        class="track-btn-wrap"
+        :class="trackAnimKey > 0 ? 'is-animated' : ''"
+        :key="trackAnimKey"
+        @contextmenu.prevent
+      >
+        <BaseButton
+          size="large"
+          :variant="targetMet ? 'primary' : 'secondary'"
+          @click="handleTrack"
+        >
+          <IconBoltFill v-if="targetMet" class="size-5 bolt-icon" />
+          <IconBolt v-else class="size-5 bolt-icon" />
+          <span class="sr-only">Complete {{ activity.title }}</span>
+        </BaseButton>
+        <div v-if="trackAnimKey > 0" class="track-anim-layer" />
+      </div>
+
+      <span
+        class="absolute -bottom-3 text-[10px] text-muted-foreground/50 text-center leading-none select-none whitespace-nowrap"
+      >
+        Hold for note
+      </span>
     </div>
+
+    <NoteCompletionDialog v-model:open="noteDialogOpen" @confirm="handleNoteConfirm" />
   </div>
 </template>
 
