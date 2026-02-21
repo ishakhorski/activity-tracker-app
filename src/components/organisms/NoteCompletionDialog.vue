@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue'
 
 import {
   BaseDialog,
@@ -8,27 +8,27 @@ import {
   BaseDialogTitle,
   BaseDialogDescription,
   BaseDialogFooter,
-} from "@/components/atoms/dialog";
-import { BaseButton } from "@/components/atoms/button";
-import { BaseTextarea } from "@/components/atoms/textarea";
+} from '@/components/atoms/dialog'
+import { BaseButton } from '@/components/atoms/button'
+import { BaseTextarea } from '@/components/atoms/textarea'
 
-const open = defineModel<boolean>("open", { default: false });
+const open = defineModel<boolean>('open', { default: false })
 
 const emit = defineEmits<{
-  confirm: [note: string];
-}>();
+  confirm: [note: string]
+}>()
 
-const note = ref("");
+const note = ref('')
 
 function handleConfirm() {
-  emit("confirm", note.value.trim());
-  note.value = "";
-  open.value = false;
+  emit('confirm', note.value.trim())
+  note.value = ''
+  open.value = false
 }
 
 function handleCancel() {
-  note.value = "";
-  open.value = false;
+  note.value = ''
+  open.value = false
 }
 </script>
 

@@ -1,8 +1,14 @@
 import type { Activity } from '@/types/activity'
 import type { Completion } from '@/types/completion'
+import type {
+  ActivityMember,
+  CreateActivityMember,
+  UpdateActivityMember,
+} from '@/types/activityMember'
 
 const ACTIVITIES_KEY = 'mock:activities'
 const COMPLETIONS_KEY = 'mock:completions'
+const ACTIVITY_MEMBERS_KEY = 'mock:activity-members'
 
 // --- Storage helpers ---
 
@@ -73,18 +79,41 @@ const routes: Route[] = [
     method: 'POST',
     pattern: /^\/activities\/?$/,
     handler: ({ body }) => {
-      const data = body as { title: string; schedule: Activity['schedule'] }
+      const data = body as {
+        title: string
+        description?: string
+        type: Activity['type']
+        userId: string
+        schedule: Activity['schedule']
+      }
       const all = getItems<Activity>(ACTIVITIES_KEY)
       const now = new Date().toISOString()
+      const activityId = crypto.randomUUID()
       const activity: Activity = {
-        id: crypto.randomUUID(),
+        id: activityId,
         title: data.title,
+        description: data.description,
+        type: data.type,
+        userId: data.userId,
         schedule: data.schedule,
         createdAt: now,
         updatedAt: now,
       }
       all.push(activity)
       setItems(ACTIVITIES_KEY, all)
+
+      // Auto-create owner membership
+      const members = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
+      members.push({
+        id: crypto.randomUUID(),
+        activityId,
+        userId: data.userId,
+        role: 'owner',
+        createdAt: now,
+        updatedAt: now,
+      })
+      setItems(ACTIVITY_MEMBERS_KEY, members)
+
       return json(activity, 201)
     },
   },
@@ -98,7 +127,7 @@ const routes: Route[] = [
       const index = all.findIndex((a) => a.id === match[1])
       if (index === -1) return notFound('Activity not found')
       const data = body as Partial<Pick<Activity, 'title' | 'schedule'>>
-      all[index] = { ...all[index], ...data, updatedAt: new Date().toISOString() }
+      all[index] = { ...all[index]!, ...data, updatedAt: new Date().toISOString() }
       setItems(ACTIVITIES_KEY, all)
       return json(all[index])
     },
@@ -113,7 +142,7 @@ const routes: Route[] = [
       const index = all.findIndex((a) => a.id === match[1])
       if (index === -1) return notFound('Activity not found')
       const now = new Date().toISOString()
-      all[index] = { ...all[index], archivedAt: now, updatedAt: now }
+      all[index] = { ...all[index]!, archivedAt: now, updatedAt: now }
       setItems(ACTIVITIES_KEY, all)
       return json(all[index])
     },
@@ -127,7 +156,7 @@ const routes: Route[] = [
       const all = getItems<Activity>(ACTIVITIES_KEY)
       const index = all.findIndex((a) => a.id === match[1])
       if (index === -1) return notFound('Activity not found')
-      const { archivedAt: _, ...rest } = all[index]
+      const { archivedAt: _, ...rest } = all[index]!
       all[index] = { ...rest, updatedAt: new Date().toISOString() } as Activity
       setItems(ACTIVITIES_KEY, all)
       return json(all[index])
@@ -181,13 +210,20 @@ const routes: Route[] = [
     method: 'POST',
     pattern: /^\/completions\/?$/,
     handler: ({ body }) => {
-      const data = body as { activityId: string; completedAt: string }
+      const data = body as {
+        activityId: string
+        userId: string
+        completedAt: string
+        note?: string
+      }
       const all = getItems<Completion>(COMPLETIONS_KEY)
       const now = new Date().toISOString()
       const completion: Completion = {
         id: crypto.randomUUID(),
         activityId: data.activityId,
+        userId: data.userId,
         completedAt: data.completedAt,
+        note: data.note,
         createdAt: now,
         updatedAt: now,
       }
@@ -207,6 +243,81 @@ const routes: Route[] = [
       if (index === -1) return notFound('Completion not found')
       all.splice(index, 1)
       setItems(COMPLETIONS_KEY, all)
+      return noContent()
+    },
+  },
+
+  // GET /activity-members?activityId=
+  {
+    method: 'GET',
+    pattern: /^\/activity-members\/?$/,
+    handler: ({ url }) => {
+      const activityId = url.searchParams.get('activityId')
+      let all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
+      if (activityId) {
+        all = all.filter((m) => m.activityId === activityId)
+      }
+      return json({ data: all, total: all.length })
+    },
+  },
+
+  // GET /activity-members/:id
+  {
+    method: 'GET',
+    pattern: /^\/activity-members\/([^/]+)$/,
+    handler: ({ match }) => {
+      const member = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY).find((m) => m.id === match[1])
+      return member ? json(member) : notFound('ActivityMember not found')
+    },
+  },
+
+  // POST /activity-members
+  {
+    method: 'POST',
+    pattern: /^\/activity-members\/?$/,
+    handler: ({ body }) => {
+      const data = body as CreateActivityMember
+      const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
+      const now = new Date().toISOString()
+      const member: ActivityMember = {
+        id: crypto.randomUUID(),
+        activityId: data.activityId,
+        userId: data.userId,
+        role: data.role,
+        createdAt: now,
+        updatedAt: now,
+      }
+      all.push(member)
+      setItems(ACTIVITY_MEMBERS_KEY, all)
+      return json(member, 201)
+    },
+  },
+
+  // PATCH /activity-members/:id
+  {
+    method: 'PATCH',
+    pattern: /^\/activity-members\/([^/]+)$/,
+    handler: ({ match, body }) => {
+      const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
+      const index = all.findIndex((m) => m.id === match[1])
+      if (index === -1) return notFound('ActivityMember not found')
+      const data = body as UpdateActivityMember
+      all[index] = { ...all[index]!, ...data, updatedAt: new Date().toISOString() }
+      setItems(ACTIVITY_MEMBERS_KEY, all)
+      return json(all[index])
+    },
+  },
+
+  // DELETE /activity-members/:id
+  {
+    method: 'DELETE',
+    pattern: /^\/activity-members\/([^/]+)$/,
+    handler: ({ match }) => {
+      const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
+      const index = all.findIndex((m) => m.id === match[1])
+      if (index === -1) return notFound('ActivityMember not found')
+      all.splice(index, 1)
+      setItems(ACTIVITY_MEMBERS_KEY, all)
       return noContent()
     },
   },

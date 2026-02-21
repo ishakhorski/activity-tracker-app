@@ -7,6 +7,7 @@ import {
   deleteCompletion,
 } from '@/services/completionsService'
 import { getDateRange } from '@/utils/completions'
+import { useAuth } from '@/composables/useAuth'
 
 const COMPLETIONS_QUERY_KEY = ['complitions'] as const
 
@@ -27,6 +28,7 @@ export const useCompletionsQuery = () => {
 
 export const useCompletionCreateMutation = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const { mutate } = useMutation({
     mutationFn: (data: CreateCompletion) => createCompletion(data),
@@ -38,6 +40,7 @@ export const useCompletionCreateMutation = () => {
       const optimistic: Completion = {
         id: `temp-${crypto.randomUUID()}`,
         activityId: data.activityId,
+        userId: data.userId,
         completedAt: data.completedAt,
         note: data.note,
         createdAt: now,
@@ -62,7 +65,8 @@ export const useCompletionCreateMutation = () => {
   })
 
   return {
-    addCompletion: (data: CreateCompletion) => mutate(data),
+    addCompletion: (data: Omit<CreateCompletion, 'userId'>) =>
+      mutate({ ...data, userId: user.value?.id ?? '' }),
   }
 }
 

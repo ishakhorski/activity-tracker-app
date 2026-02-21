@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import type { Component } from "vue";
+import type { Component } from 'vue'
 
-import { useLoginMutation } from "@/composables/useAuth";
-import { AUTH_CONNECTOR, type AuthConnector } from "@/types/auth";
+import { useLoginMutation } from '@/composables/useAuth'
+import { AUTH_CONNECTOR, type AuthConnector } from '@/types/auth'
 
-import IconTally from "@/assets/icons/tally.svg";
-import IconGoogle from "@/assets/icons/google.svg";
-import IconApple from "@/assets/icons/apple.svg";
+import IconTally from '@/assets/icons/tally.svg'
+import IconGoogle from '@/assets/icons/google.svg'
+import IconApple from '@/assets/icons/apple.svg'
 
-const { login, isPending } = useLoginMutation();
+const { login, isPending } = useLoginMutation()
 
 const providers: { connection: AuthConnector; label: string; icon: Component }[] = [
-  { connection: AUTH_CONNECTOR.GOOGLE, label: "Continue with Google", icon: IconGoogle },
-  { connection: AUTH_CONNECTOR.APPLE, label: "Continue with Apple", icon: IconApple },
-];
+  { connection: AUTH_CONNECTOR.GOOGLE, label: 'Continue with Google', icon: IconGoogle },
+  { connection: AUTH_CONNECTOR.APPLE, label: 'Continue with Apple', icon: IconApple },
+]
 </script>
 
 <template>

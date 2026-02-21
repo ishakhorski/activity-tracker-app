@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type Component, defineAsyncComponent } from "vue";
-import { useRoute } from "vue-router";
+import { type Component, defineAsyncComponent } from 'vue'
+import { useRoute } from 'vue-router'
 
-const route = useRoute();
+const route = useRoute()
 
 const layouts: Record<string, Component> = {
-  auth: defineAsyncComponent(() => import("@/layouts/AuthLayout.vue")),
-  empty: defineAsyncComponent(() => import("@/layouts/EmptyLayout.vue")),
-  main: defineAsyncComponent(() => import("@/layouts/MainLayout.vue")),
-};
+  auth: defineAsyncComponent(() => import('@/layouts/AuthLayout.vue')),
+  empty: defineAsyncComponent(() => import('@/layouts/EmptyLayout.vue')),
+  main: defineAsyncComponent(() => import('@/layouts/MainLayout.vue')),
+}
 </script>
 
 <template>

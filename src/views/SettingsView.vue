@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import PageHeader from "@/components/molecules/PageHeader.vue";
-import PageContent from "@/components/molecules/PageContent.vue";
+import PageHeader from '@/components/molecules/PageHeader.vue'
+import PageContent from '@/components/molecules/PageContent.vue'
 import {
   BaseSegmentedControl,
   BaseSegmentedControlButton,
-} from "@/components/atoms/segmented-control";
-import { BaseButton } from "@/components/atoms/button";
-import { useLogoutMutation } from "@/composables/useAuth";
-import { useTheme } from "@/composables/useTheme";
+} from '@/components/atoms/segmented-control'
+import { BaseButton } from '@/components/atoms/button'
+import { useLogoutMutation } from '@/composables/useAuth'
+import { useTheme } from '@/composables/useTheme'
 
-import IconSystem from "@/assets/icons/system.svg";
-import IconSunFill from "@/assets/icons/sun-fill.svg";
-import IconMoonFill from "@/assets/icons/moon-fill.svg";
+import IconSystem from '@/assets/icons/system.svg'
+import IconSunFill from '@/assets/icons/sun-fill.svg'
+import IconMoonFill from '@/assets/icons/moon-fill.svg'
 
-const { signOut, isPending } = useLogoutMutation();
-const { theme } = useTheme();
+const { signOut, isPending } = useLogoutMutation()
+const { theme } = useTheme()
 </script>
 
 <template>

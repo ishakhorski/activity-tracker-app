@@ -19,10 +19,10 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    count?: number;
+    count?: number
   }>(),
   { count: 4 },
-);
+)
 </script>
 
 <style scoped>

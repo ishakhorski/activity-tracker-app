@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import IconBolt from "@/assets/icons/bolt.svg";
-import IconChart from "@/assets/icons/chart.svg";
-import IconPlus from "@/assets/icons/plus.svg";
-import { useCreateActivityDialog } from "@/composables/useCreateActivityDialog";
+import IconBolt from '@/assets/icons/bolt.svg'
+import IconChart from '@/assets/icons/chart.svg'
+import IconPlus from '@/assets/icons/plus.svg'
+import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 
-const { openCreateActivityDialog } = useCreateActivityDialog();
+const { openCreateActivityDialog } = useCreateActivityDialog()
 </script>
 
 <template>

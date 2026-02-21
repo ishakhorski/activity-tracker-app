@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import AppNavigationMenu from "@/components/organisms/AppNavigationMenu.vue";
-import CreateActivityDialog from "@/components/organisms/CreateActivityDialog.vue";
-import { useCreateActivityDialog } from "@/composables/useCreateActivityDialog";
+import AppNavigationMenu from '@/components/organisms/AppNavigationMenu.vue'
+import CreateActivityDialog from '@/components/organisms/CreateActivityDialog.vue'
+import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 
-import IconGear from "@/assets/icons/gear.svg";
+import IconGear from '@/assets/icons/gear.svg'
 
-const { isCreateActivityDialogOpen } = useCreateActivityDialog();
+const { isCreateActivityDialogOpen } = useCreateActivityDialog()
 </script>
 
 <template>

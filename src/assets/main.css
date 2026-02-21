@@ -1,7 +1,7 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@import "@/assets/theme.css";
-@import "@/assets/animations.css";
+@import '@/assets/theme.css';
+@import '@/assets/animations.css';
 
 @custom-variant dark (&: is(.dark *));
 
@@ -10,9 +10,9 @@
     font-family:
       system-ui,
       -apple-system,
-      "Segoe UI",
+      'Segoe UI',
       Roboto,
-      "Helvetica Neue",
+      'Helvetica Neue',
       Arial,
       sans-serif;
     background-color: var(--background);

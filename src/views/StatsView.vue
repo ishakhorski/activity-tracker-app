@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import PageHeader from "@/components/molecules/PageHeader.vue";
-import PageContent from "@/components/molecules/PageContent.vue";
+import PageHeader from '@/components/molecules/PageHeader.vue'
+import PageContent from '@/components/molecules/PageContent.vue'
 </script>
 
 <template>

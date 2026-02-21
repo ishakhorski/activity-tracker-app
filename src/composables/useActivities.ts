@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
 import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
+import { ACTIVITY_TYPE, type ActivityType } from '@/types/activityType'
 import {
   getAllActivities,
   createActivity,
@@ -9,6 +10,7 @@ import {
   unarchiveActivity,
   deleteActivity,
 } from '@/services/activitiesService'
+import { useAuth } from '@/composables/useAuth'
 
 const ACTIVITIES_QUERY_KEY = ['activities'] as const
 
@@ -28,6 +30,7 @@ export const useActivitiesQuery = () => {
 
 export const useActivityCreateMutation = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const { mutate } = useMutation({
     mutationFn: (data: CreateActivity) => createActivity(data),
@@ -39,6 +42,9 @@ export const useActivityCreateMutation = () => {
       const optimistic: Activity = {
         id: `temp-${crypto.randomUUID()}`,
         title: data.title,
+        description: data.description,
+        type: data.type,
+        userId: data.userId,
         schedule: data.schedule,
         createdAt: now,
         updatedAt: now,
@@ -62,7 +68,12 @@ export const useActivityCreateMutation = () => {
   })
 
   return {
-    createActivity: (data: CreateActivity) => mutate(data),
+    createActivity: (data: Omit<CreateActivity, 'userId' | 'type'> & { type?: ActivityType }) =>
+      mutate({
+        ...data,
+        type: data.type ?? ACTIVITY_TYPE.PERSONAL,
+        userId: user.value?.id ?? '',
+      }),
   }
 }
 

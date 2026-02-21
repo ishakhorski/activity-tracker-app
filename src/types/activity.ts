@@ -1,9 +1,12 @@
 import { type ActivitySchedule } from './activitySchedule'
+import { type ActivityType } from './activityType'
 
 export interface Activity {
   id: string
   title: string
   description?: string
+  type: ActivityType
+  userId: string
   schedule: ActivitySchedule
   createdAt: string
   updatedAt: string

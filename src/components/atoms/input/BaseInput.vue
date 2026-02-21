@@ -14,9 +14,5 @@ const modelValue = defineModel<string>()
 </script>
 
 <template>
-  <input
-    v-bind="$attrs"
-    v-model="modelValue"
-    :class="twMerge(inputVariation(), props.class)"
-  />
+  <input v-bind="$attrs" v-model="modelValue" :class="twMerge(inputVariation(), props.class)" />
 </template>

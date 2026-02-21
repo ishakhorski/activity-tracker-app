@@ -1,150 +1,96 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { useRouteQuery } from "@vueuse/router";
+import { computed, ref, watch } from 'vue'
 
-import {
-  BaseSegmentedControl,
-  BaseSegmentedControlButton,
-} from "@/components/atoms/segmented-control";
-import { BaseToggleButton } from "@/components/atoms/toggle-button";
-import PageHeader from "@/components/molecules/PageHeader.vue";
-import PageContent from "@/components/molecules/PageContent.vue";
-import ActivityCard from "@/components/organisms/ActivityCard.vue";
-import ActivityCardSkeleton from "@/components/organisms/ActivityCardSkeleton.vue";
-import ActivitiesOnboarding from "@/components/organisms/ActivitiesOnboarding.vue";
-import ActivitiesEmpty from "@/components/organisms/ActivitiesEmpty.vue";
-
-import IconCalendar from "@/assets/icons/calendar.svg";
-import IconList from "@/assets/icons/list.svg";
-import IconCheckmarkStack from "@/assets/icons/checkmark-stack.svg";
-import IconCheckmarkStackFill from "@/assets/icons/checkmark-stack-fill.svg";
+import PageHeader from '@/components/molecules/PageHeader.vue'
+import PageContent from '@/components/molecules/PageContent.vue'
+import ActivityCard from '@/components/organisms/ActivityCard.vue'
+import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vue'
+import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
 
 import {
   useActivitiesQuery,
   useActivityArchiveMutation,
   useActivityDeleteMutation,
-} from "@/composables/useActivities";
-import { isScheduledToday } from "@/utils/activities";
-import { useCompletionsQuery, useCompletionCreateMutation } from "@/composables/useCompletions";
-import { getCompletionsByActivity, getTodayCompletionCount } from "@/utils/completions";
-import { useCreateActivityDialog } from "@/composables/useCreateActivityDialog";
+} from '@/composables/useActivities'
+import { isScheduledToday } from '@/utils/activities'
+import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
+import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
+import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 
-const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery();
-const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery();
+const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery()
+const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery()
 
-const activities = computed(() => activitiesData.value ?? []);
-const completions = computed(() => completionsData.value ?? []);
+const activities = computed(() => activitiesData.value ?? [])
+const completions = computed(() => completionsData.value ?? [])
 
 function getCompletions(activityId: string) {
-  return getCompletionsByActivity(completions.value, activityId);
+  return getCompletionsByActivity(completions.value, activityId)
 }
 
 function getTodayCount(activityId: string) {
-  return getTodayCompletionCount(completions.value, activityId);
+  return getTodayCompletionCount(completions.value, activityId)
 }
-const { addCompletion } = useCompletionCreateMutation();
-const { archiveActivity } = useActivityArchiveMutation();
-const { deleteActivity } = useActivityDeleteMutation();
+const { addCompletion } = useCompletionCreateMutation()
+const { archiveActivity } = useActivityArchiveMutation()
+const { deleteActivity } = useActivityDeleteMutation()
 
-const loading = computed(() => activitiesLoading.value || completionsLoading.value);
+const loading = computed(() => activitiesLoading.value || completionsLoading.value)
 
-const { openCreateActivityDialog } = useCreateActivityDialog();
+const { openCreateActivityDialog } = useCreateActivityDialog()
 
-const showFilter = useRouteQuery<string>("show", "all");
+// --- Sorting ---
 
-const hideDoneQuery = useRouteQuery<string>("hideDone", "false");
-const hideCompleted = computed({
-  get: () => hideDoneQuery.value === "true",
-  set: (val: boolean) => (hideDoneQuery.value = val ? "true" : "false"),
-});
-
-// --- Sorting & filtering ---
-
-const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt));
+const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
 
 function isTargetMet(activity: (typeof activities.value)[number]): boolean {
-  const count = getTodayCount(activity.id);
-  if (!isScheduledToday(activity)) return count > 0;
-  return count >= activity.schedule.targetCompletions;
+  const count = getTodayCount(activity.id)
+  if (!isScheduledToday(activity)) return count > 0
+  return count >= activity.schedule.targetCompletions
 }
 
 function getSortGroup(activity: (typeof activities.value)[number]): number {
-  if (isTargetMet(activity)) return 2;
-  if (!isScheduledToday(activity)) return 1;
-  return 0;
+  if (isTargetMet(activity)) return 2
+  if (!isScheduledToday(activity)) return 1
+  return 0
 }
 
-const completedOrder = ref<Map<string, number>>(new Map());
-let completedSeq = 0;
+const completedOrder = ref<Map<string, number>>(new Map())
+let completedSeq = 0
 
 watch(
   () => activeActivities.value.map((a) => isTargetMet(a)),
   (curr, prev) => {
     activeActivities.value.forEach((a, i) => {
-      const justCompleted = curr[i] && (!prev || !prev[i]);
+      const justCompleted = curr[i] && (!prev || !prev[i])
       if (justCompleted && !completedOrder.value.has(a.id)) {
-        completedOrder.value.set(a.id, completedSeq++);
+        completedOrder.value.set(a.id, completedSeq++)
       }
       if (!curr[i]) {
-        completedOrder.value.delete(a.id);
+        completedOrder.value.delete(a.id)
       }
-    });
+    })
   },
   { immediate: true },
-);
+)
 
 const sortedActivities = computed(() => {
   return [...activeActivities.value].sort((a, b) => {
-    const aGroup = getSortGroup(a);
-    const bGroup = getSortGroup(b);
-    if (aGroup !== bGroup) return aGroup - bGroup;
+    const aGroup = getSortGroup(a)
+    const bGroup = getSortGroup(b)
+    if (aGroup !== bGroup) return aGroup - bGroup
     if (aGroup === 2) {
-      const aOrder = completedOrder.value.get(a.id) ?? 0;
-      const bOrder = completedOrder.value.get(b.id) ?? 0;
-      return bOrder - aOrder;
+      const aOrder = completedOrder.value.get(a.id) ?? 0
+      const bOrder = completedOrder.value.get(b.id) ?? 0
+      return bOrder - aOrder
     }
-    return 0;
-  });
-});
-
-const filteredActivities = computed(() => {
-  return sortedActivities.value.filter((activity) => {
-    if (showFilter.value === "today" && !isScheduledToday(activity)) return false;
-    if (hideCompleted.value && isTargetMet(activity)) return false;
-    return true;
-  });
-});
-
-function clearFilters() {
-  showFilter.value = "all";
-  hideCompleted.value = false;
-}
+    return 0
+  })
+})
 </script>
 
 <template>
   <PageHeader>
-    <div class="flex items-center justify-between">
-      <h1 class="font-bold text-2xl">Activities</h1>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <BaseSegmentedControl v-model="showFilter">
-        <BaseSegmentedControlButton value="all">
-          <IconList class="size-4" />
-          All
-        </BaseSegmentedControlButton>
-        <BaseSegmentedControlButton value="today">
-          <IconCalendar class="size-4" />
-          Today
-        </BaseSegmentedControlButton>
-      </BaseSegmentedControl>
-
-      <BaseToggleButton v-model="hideCompleted">
-        <IconCheckmarkStackFill v-if="hideCompleted" class="size-4" />
-        <IconCheckmarkStack v-else class="size-4" />
-        Hide done
-      </BaseToggleButton>
-    </div>
+    <h1 class="font-bold text-2xl">Activities</h1>
   </PageHeader>
 
   <PageContent>
@@ -155,11 +101,9 @@ function clearFilters() {
       @create="openCreateActivityDialog"
     />
 
-    <ActivitiesEmpty v-else-if="filteredActivities.length === 0" @clear-filters="clearFilters" />
-
     <TransitionGroup v-else name="activity-list" tag="div" class="flex flex-col gap-3">
       <ActivityCard
-        v-for="activity in filteredActivities"
+        v-for="activity in sortedActivities"
         :key="activity.id"
         :activity="activity"
         :completions="getCompletions(activity.id)"
@@ -169,8 +113,6 @@ function clearFilters() {
       />
     </TransitionGroup>
   </PageContent>
-
-
 </template>
 
 <style scoped>

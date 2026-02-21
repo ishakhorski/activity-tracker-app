@@ -1,106 +1,106 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { onLongPress } from "@vueuse/core";
+import { computed, ref } from 'vue'
+import { onLongPress } from '@vueuse/core'
 
-import { BaseButton } from "@/components/atoms/button";
-import IconBolt from "@/assets/icons/bolt.svg";
-import IconBoltFill from "@/assets/icons/bolt-fill.svg";
-import NoteCompletionDialog from "@/components/organisms/NoteCompletionDialog.vue";
+import { BaseButton } from '@/components/atoms/button'
+import IconBolt from '@/assets/icons/bolt.svg'
+import IconBoltFill from '@/assets/icons/bolt-fill.svg'
+import NoteCompletionDialog from '@/components/organisms/NoteCompletionDialog.vue'
 
-import { getTargetForDay as getTargetForDayFn } from "@/utils/activities";
+import { getTargetForDay as getTargetForDayFn } from '@/utils/activities'
 
-import type { Activity } from "@/types/activity";
-import type { Completion, CreateCompletion } from "@/types/completion";
+import type { Activity } from '@/types/activity'
+import type { Completion, CreateCompletion } from '@/types/completion'
 
 const props = defineProps<{
-  activity: Activity;
-  completions: Completion[];
-}>();
+  activity: Activity
+  completions: Completion[]
+}>()
 
 const emit = defineEmits<{
-  complete: [payload: CreateCompletion];
-}>();
+  complete: [payload: Omit<CreateCompletion, 'userId'>]
+}>()
 
 const last7Days = computed(() => {
   const days: {
-    weekday: string;
-    date: number;
-    dayStart: Date;
-    count: number;
-    dayTarget: number;
-    isToday: boolean;
-    isScheduled: boolean;
-  }[] = [];
-  const now = new Date();
+    weekday: string
+    date: number
+    dayStart: Date
+    count: number
+    dayTarget: number
+    isToday: boolean
+    isScheduled: boolean
+  }[] = []
+  const now = new Date()
 
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
+    const date = new Date(now)
+    date.setDate(date.getDate() - i)
+    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const dayEnd = new Date(dayStart)
+    dayEnd.setDate(dayEnd.getDate() + 1)
 
     const count = props.completions.filter((c) => {
-      const t = new Date(c.completedAt);
-      return t >= dayStart && t < dayEnd;
-    }).length;
+      const t = new Date(c.completedAt)
+      return t >= dayStart && t < dayEnd
+    }).length
 
-    const dayTarget = getTargetForDayFn(props.activity, dayStart.getDay());
+    const dayTarget = getTargetForDayFn(props.activity, dayStart.getDay())
 
     days.push({
-      weekday: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+      weekday: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
       date: dayStart.getDate(),
       dayStart,
       count,
       dayTarget,
       isToday: i === 0,
       isScheduled: dayTarget > 0,
-    });
+    })
   }
 
-  return days;
-});
+  return days
+})
 
-const todayData = computed(() => last7Days.value[last7Days.value.length - 1]);
-const todayCount = computed(() => todayData.value?.count ?? 0);
-const todayTarget = computed(() => todayData.value?.dayTarget ?? 0);
+const todayData = computed(() => last7Days.value[last7Days.value.length - 1])
+const todayCount = computed(() => todayData.value?.count ?? 0)
+const todayTarget = computed(() => todayData.value?.dayTarget ?? 0)
 
-const targetMet = computed(() => todayTarget.value > 0 && todayCount.value >= todayTarget.value);
+const targetMet = computed(() => todayTarget.value > 0 && todayCount.value >= todayTarget.value)
 
-const trackAnimKey = ref(0);
-const trackBtnWrapRef = ref<HTMLDivElement | null>(null);
-const longPressActivated = ref(false);
-const noteDialogOpen = ref(false);
-const pendingCompletedAt = ref<string | null>(null);
+const trackAnimKey = ref(0)
+const trackBtnWrapRef = ref<HTMLDivElement | null>(null)
+const longPressActivated = ref(false)
+const noteDialogOpen = ref(false)
+const pendingCompletedAt = ref<string | null>(null)
 
 function handleTrack() {
   if (longPressActivated.value) {
-    longPressActivated.value = false;
-    return;
+    longPressActivated.value = false
+    return
   }
-  trackAnimKey.value++;
-  emit("complete", { activityId: props.activity.id, completedAt: new Date().toISOString() });
+  trackAnimKey.value++
+  emit('complete', { activityId: props.activity.id, completedAt: new Date().toISOString() })
 }
 
 onLongPress(
   trackBtnWrapRef,
   () => {
-    longPressActivated.value = true;
-    pendingCompletedAt.value = new Date().toISOString();
-    noteDialogOpen.value = true;
+    longPressActivated.value = true
+    pendingCompletedAt.value = new Date().toISOString()
+    noteDialogOpen.value = true
   },
   { delay: 600, distanceThreshold: 8 },
-);
+)
 
 function handleNoteConfirm(note: string) {
-  if (!pendingCompletedAt.value) return;
-  trackAnimKey.value++;
-  emit("complete", {
+  if (!pendingCompletedAt.value) return
+  trackAnimKey.value++
+  emit('complete', {
     activityId: props.activity.id,
     completedAt: pendingCompletedAt.value,
     note: note || undefined,
-  });
-  pendingCompletedAt.value = null;
+  })
+  pendingCompletedAt.value = null
 }
 </script>
 
@@ -111,7 +111,7 @@ function handleNoteConfirm(note: string) {
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-sm truncate">{{ activity.title }}</h3>
         <span class="text-[11px] text-muted-foreground tabular-nums shrink-0">
-          {{ todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount > 0 ? todayCount : "" }}
+          {{ todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount > 0 ? todayCount : '' }}
         </span>
       </div>
 
