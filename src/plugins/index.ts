@@ -1,11 +1,13 @@
-import type { App, Plugin } from 'vue'
+import type { App } from 'vue'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 
-import './mockApiPlugin' // initialize mock API
+import router from '@/router'
+import { createAuth0Plugin } from './auth0Plugin'
 
-const plugins: Plugin[] = [VueQueryPlugin]
+export async function registerPlugins(app: App): Promise<void> {
+  const auth0Plugin = await createAuth0Plugin(router)
+  const plugins = [router, auth0Plugin, VueQueryPlugin]
 
-export function registerPlugins(app: App): void {
   for (const plugin of plugins) {
     app.use(plugin)
   }

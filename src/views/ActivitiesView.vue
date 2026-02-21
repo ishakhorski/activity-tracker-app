@@ -7,11 +7,7 @@ import ActivityCard from '@/components/organisms/ActivityCard.vue'
 import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vue'
 import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
 
-import {
-  useActivitiesQuery,
-  useActivityArchiveMutation,
-  useActivityDeleteMutation,
-} from '@/composables/useActivities'
+import { useActivitiesQuery } from '@/composables/useActivities'
 import { isScheduledToday } from '@/utils/activities'
 import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
 import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
@@ -31,8 +27,6 @@ function getTodayCount(activityId: string) {
   return getTodayCompletionCount(completions.value, activityId)
 }
 const { addCompletion } = useCompletionCreateMutation()
-const { archiveActivity } = useActivityArchiveMutation()
-const { deleteActivity } = useActivityDeleteMutation()
 
 const loading = computed(() => activitiesLoading.value || completionsLoading.value)
 
@@ -101,22 +95,41 @@ const sortedActivities = computed(() => {
       @create="openCreateActivityDialog"
     />
 
-    <TransitionGroup v-else name="activity-list" tag="div" class="flex flex-col gap-3">
-      <ActivityCard
-        v-for="activity in sortedActivities"
-        :key="activity.id"
-        :activity="activity"
-        :completions="getCompletions(activity.id)"
-        @complete="addCompletion"
-        @archive="archiveActivity"
-        @delete="deleteActivity"
-      />
+    <TransitionGroup
+      v-else
+      name="activity-list"
+      appear
+      tag="div"
+      class="relative flex flex-col gap-3"
+    >
+      <div v-for="activity in sortedActivities" :key="activity.id">
+        <ActivityCard
+          :activity="activity"
+          :completions="getCompletions(activity.id)"
+          @complete="addCompletion"
+        />
+      </div>
     </TransitionGroup>
   </PageContent>
 </template>
 
 <style scoped>
-.activity-list-move {
-  transition: transform 0.4s ease;
+.activity-list-move,
+.activity-list-enter-active,
+.activity-list-leave-active {
+  transition:
+    transform 0.4s ease,
+    opacity 0.4s ease;
+}
+
+.activity-list-enter-from,
+.activity-list-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.activity-list-leave-active {
+  position: absolute;
+  width: 100%;
 }
 </style>

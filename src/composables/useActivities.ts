@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
 import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
-import { ACTIVITY_TYPE, type ActivityType } from '@/types/activityType'
 import {
   getAllActivities,
   createActivity,
@@ -44,7 +43,7 @@ export const useActivityCreateMutation = () => {
         title: data.title,
         description: data.description,
         type: data.type,
-        userId: data.userId,
+        userId: user.value?.id ?? '',
         schedule: data.schedule,
         createdAt: now,
         updatedAt: now,
@@ -68,11 +67,10 @@ export const useActivityCreateMutation = () => {
   })
 
   return {
-    createActivity: (data: Omit<CreateActivity, 'userId' | 'type'> & { type?: ActivityType }) =>
+    createActivity: (data: CreateActivity) =>
       mutate({
         ...data,
-        type: data.type ?? ACTIVITY_TYPE.PERSONAL,
-        userId: user.value?.id ?? '',
+        type: data.type,
       }),
   }
 }
@@ -105,8 +103,7 @@ export const useActivityUpdateMutation = () => {
   })
 
   return {
-    updateActivity: (id: string, data: Partial<Pick<Activity, 'title' | 'schedule'>>) =>
-      mutate({ id, data }),
+    updateActivity: (id: string, data: UpdateActivity) => mutate({ id, data }),
   }
 }
 

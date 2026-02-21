@@ -8,4 +8,4 @@ export interface Completion {
   updatedAt: string
 }
 
-export type CreateCompletion = Omit<Completion, 'id' | 'createdAt' | 'updatedAt'>
+export type CreateCompletion = Omit<Completion, 'id' | 'userId' | 'createdAt' | 'updatedAt'>

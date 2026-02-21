@@ -24,7 +24,7 @@ const { theme } = useTheme()
 
   <PageContent>
     <div class="grid gap-3">
-      <div class="glass rounded-2xl p-4 flex items-center justify-between gap-4">
+      <div class="glass rounded-2xl pl-4 pr-2 py-2 flex items-center justify-between gap-4">
         <label class="text-sm font-medium">Theme</label>
         <BaseSegmentedControl v-model="theme">
           <BaseSegmentedControlButton value="light" class="flex-col h-auto w-14 gap-0.5 py-2">

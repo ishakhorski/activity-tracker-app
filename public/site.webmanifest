@@ -1,6 +1,6 @@
 {
-    "name": "Tally — Track Your Momentum",
-    "short_name": "Tally",
+    "name": "Pulse — Track Your Momentum",
+    "short_name": "Pulse",
     "description": "Track activity completions, build streaks, and maintain momentum over time.",
     "icons": [
         { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },

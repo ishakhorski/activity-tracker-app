@@ -18,8 +18,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  complete: [payload: Omit<CreateCompletion, 'userId'>]
+  complete: [payload: CreateCompletion]
 }>()
+
+// --- Last 7 days ---
 
 const last7Days = computed(() => {
   const days: {
@@ -67,6 +69,8 @@ const todayTarget = computed(() => todayData.value?.dayTarget ?? 0)
 
 const targetMet = computed(() => todayTarget.value > 0 && todayCount.value >= todayTarget.value)
 
+// --- Track button ---
+
 const trackAnimKey = ref(0)
 const trackBtnWrapRef = ref<HTMLDivElement | null>(null)
 const longPressActivated = ref(false)
@@ -105,8 +109,8 @@ function handleNoteConfirm(note: string) {
 </script>
 
 <template>
-  <!-- Card content -->
-  <div class="shrink-0 w-full glass rounded-2xl px-3 py-4 flex items-center gap-3 touch-pan-y">
+  <!-- Glass card -->
+  <div class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3">
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-sm truncate">{{ activity.title }}</h3>
@@ -132,7 +136,10 @@ function handleNoteConfirm(note: string) {
             :class="day.isScheduled ? 'bg-foreground/5' : 'bg-foreground/[0.02]'"
             :aria-label="`${day.isToday ? 'Today' : day.weekday + ' ' + day.date}: ${day.count}${day.dayTarget > 0 ? ' of ' + day.dayTarget : ''} completions`"
             @click="
-              emit('complete', { activityId: activity.id, completedAt: day.dayStart.toISOString() })
+              emit('complete', {
+                activityId: activity.id,
+                completedAt: day.dayStart.toISOString(),
+              })
             "
           >
             <div

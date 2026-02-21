@@ -13,8 +13,11 @@ export interface Activity {
   archivedAt?: string
 }
 
-export type CreateActivity = Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>
+export type CreateActivity = Omit<
+  Activity,
+  'id' | 'userId' | 'createdAt' | 'updatedAt' | 'archivedAt'
+>
 
 export type UpdateActivity = Partial<
-  Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'archivedAt'>
+  Omit<Activity, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'archivedAt'>
 >

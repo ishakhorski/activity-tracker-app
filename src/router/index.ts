@@ -4,7 +4,7 @@ import { AUTH_ROLE, type AuthRole } from '@/types/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    layout?: string
+    layout?: 'auth' | 'main' | 'empty'
     roles?: AuthRole[]
   }
 }
@@ -15,9 +15,16 @@ const router = createRouter({
     {
       path: '/auth/login',
       name: 'login',
-      component: () => import('@/views/LoginView.vue'),
+      component: () => import('@/views/AuthLoginView.vue'),
       meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
     },
+    {
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: () => import('@/views/AuthCallbackView.vue'),
+      meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
+    },
+
     {
       path: '/',
       redirect: '/activities',

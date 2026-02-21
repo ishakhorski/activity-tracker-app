@@ -40,7 +40,7 @@ export const useCompletionCreateMutation = () => {
       const optimistic: Completion = {
         id: `temp-${crypto.randomUUID()}`,
         activityId: data.activityId,
-        userId: data.userId,
+        userId: user.value?.id ?? '',
         completedAt: data.completedAt,
         note: data.note,
         createdAt: now,
@@ -65,8 +65,7 @@ export const useCompletionCreateMutation = () => {
   })
 
   return {
-    addCompletion: (data: Omit<CreateCompletion, 'userId'>) =>
-      mutate({ ...data, userId: user.value?.id ?? '' }),
+    addCompletion: (data: CreateCompletion) => mutate({ ...data }),
   }
 }
 
