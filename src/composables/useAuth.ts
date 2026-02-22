@@ -1,41 +1,41 @@
-import { ref } from 'vue'
+import { ref } from "vue";
 
-import { useAuth0 } from '@/plugins/auth0Plugin'
-import { type AuthConnector } from '@/types/auth'
+import { useAuth0 } from "@/plugins/auth0Plugin";
+import { type AuthConnector } from "@/types/auth";
 
 export const useAuth = () => {
-  const { isAuthenticated, user } = useAuth0()
-  return { isAuthenticated, user }
-}
+  const { isAuthenticated, user } = useAuth0();
+  return { isAuthenticated, user };
+};
 
 export const useLoginMutation = () => {
-  const { loginWithRedirect } = useAuth0()
-  const isPending = ref(false)
+  const { loginWithRedirect } = useAuth0();
+  const isPending = ref(false);
 
   async function login(connection: AuthConnector) {
-    isPending.value = true
+    isPending.value = true;
     try {
-      await loginWithRedirect({ authorizationParams: { connection } })
+      await loginWithRedirect({ authorizationParams: { connection } });
     } catch {
-      isPending.value = false
+      isPending.value = false;
     }
   }
 
-  return { login, isPending }
-}
+  return { login, isPending };
+};
 
 export const useLogoutMutation = () => {
-  const { logout } = useAuth0()
-  const isPending = ref(false)
+  const { logout } = useAuth0();
+  const isPending = ref(false);
 
   async function signOut() {
-    isPending.value = true
+    isPending.value = true;
     try {
-      await logout({ logoutParams: { returnTo: window.location.origin } })
+      await logout({ logoutParams: { returnTo: window.location.origin } });
     } catch {
-      isPending.value = false
+      isPending.value = false;
     }
   }
 
-  return { signOut, isPending }
-}
+  return { signOut, isPending };
+};

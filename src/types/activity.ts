@@ -1,23 +1,19 @@
-import { type ActivitySchedule } from './activitySchedule'
-import { type ActivityType } from './activityType'
+import { type ActivitySchedule } from "./activitySchedule";
+import { type ActivityType } from "./activityType";
 
 export interface Activity {
-  id: string
-  title: string
-  description?: string
-  type: ActivityType
-  userId: string
-  schedule: ActivitySchedule
-  createdAt: string
-  updatedAt: string
-  archivedAt?: string
+  id: string;
+  title: string;
+  description: string | null;
+  type: ActivityType;
+  schedule: ActivitySchedule;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
 }
 
-export type CreateActivity = Omit<
-  Activity,
-  'id' | 'userId' | 'createdAt' | 'updatedAt' | 'archivedAt'
->
+export type CreateActivity = Omit<Activity, "id" | "createdAt" | "updatedAt" | "archivedAt">;
 
 export type UpdateActivity = Partial<
-  Omit<Activity, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'archivedAt'>
->
+  Omit<Activity, "id" | "createdAt" | "updatedAt" | "archivedAt">
+>;
