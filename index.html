@@ -1,43 +1,29 @@
 <!doctype html>
 <html lang="ru">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="icon" href="/favicon.ico" />
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-        />
-        <title>Pulse — Track Your Momentum</title>
-        <meta name="description" content="Track activity completions, build streaks, and maintain momentum over time." />
-        <link
-            rel="apple-touch-icon"
-            sizes="180x180"
-            href="/apple-touch-icon.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="32x32"
-            href="/favicon-32x32.png"
-        />
-        <link
-            rel="icon"
-            type="image/png"
-            sizes="16x16"
-            href="/favicon-16x16.png"
-        />
-        <link rel="manifest" href="/site.webmanifest" />
-        <script>
-            (function () {
-                var theme = localStorage.getItem("app-theme");
-                var prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
-                var isDark = theme === "dark" || (theme !== "light" && prefersDark);
-                document.documentElement.classList.toggle("dark", isDark);
-            })();
-        </script>
-    </head>
-    <body>
-        <div id="app"></div>
-        <script type="module" src="/src/main.ts"></script>
-    </body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Pulse — Track Your Momentum</title>
+    <meta
+      name="description"
+      content="Track activity completions, build streaks, and maintain momentum over time."
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <script>
+      ;(function () {
+        var theme = localStorage.getItem('app-theme')
+        var prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
+        var isDark = theme === 'dark' || (theme !== 'light' && prefersDark)
+        document.documentElement.classList.toggle('dark', isDark)
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
