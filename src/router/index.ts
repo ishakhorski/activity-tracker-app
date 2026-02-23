@@ -36,6 +36,12 @@ const router = createRouter({
       meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
     },
     {
+      path: '/activities/:id',
+      name: 'activity-details',
+      component: () => import('@/views/ActivityDetailsView.vue'),
+      meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
+    },
+    {
       path: '/stats',
       name: 'stats-view',
       component: () => import('@/views/StatsView.vue'),

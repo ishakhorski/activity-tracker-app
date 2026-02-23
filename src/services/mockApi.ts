@@ -1,10 +1,8 @@
-import type { Activity } from '@/types/activity'
-import type { Completion } from '@/types/completion'
-import type {
-  ActivityMember,
-  CreateActivityMember,
-  UpdateActivityMember,
-} from '@/types/activityMember'
+import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
+import type { Completion, CreateCompletion } from '@/types/completion'
+import type { ActivityMember, CreateActivityMember } from '@/types/activityMember'
+
+const MOCK_USER_ID = 'mock-user-id'
 
 const ACTIVITIES_KEY = 'mock:activities'
 const COMPLETIONS_KEY = 'mock:completions'
@@ -79,13 +77,7 @@ const routes: Route[] = [
     method: 'POST',
     pattern: /^\/activities\/?$/,
     handler: ({ body }) => {
-      const data = body as {
-        title: string
-        description?: string
-        type: Activity['type']
-        userId: string
-        schedule: Activity['schedule']
-      }
+      const data = body as CreateActivity
       const all = getItems<Activity>(ACTIVITIES_KEY)
       const now = new Date().toISOString()
       const activityId = crypto.randomUUID()
@@ -94,10 +86,10 @@ const routes: Route[] = [
         title: data.title,
         description: data.description,
         type: data.type,
-        userId: data.userId,
         schedule: data.schedule,
         createdAt: now,
         updatedAt: now,
+        archivedAt: null,
       }
       all.push(activity)
       setItems(ACTIVITIES_KEY, all)
@@ -107,14 +99,14 @@ const routes: Route[] = [
       members.push({
         id: crypto.randomUUID(),
         activityId,
-        userId: data.userId,
+        userId: MOCK_USER_ID,
         role: 'owner',
         createdAt: now,
         updatedAt: now,
       })
       setItems(ACTIVITY_MEMBERS_KEY, members)
 
-      return json(activity, 201)
+      return json(activity.id, 201)
     },
   },
 
@@ -124,12 +116,13 @@ const routes: Route[] = [
     pattern: /^\/activities\/([^/]+)$/,
     handler: ({ match, body }) => {
       const all = getItems<Activity>(ACTIVITIES_KEY)
-      const index = all.findIndex((a) => a.id === match[1])
-      if (index === -1) return notFound('Activity not found')
-      const data = body as Partial<Pick<Activity, 'title' | 'schedule'>>
-      all[index] = { ...all[index]!, ...data, updatedAt: new Date().toISOString() }
+      const existing = all.find((a) => a.id === match[1])
+      if (!existing) return notFound('Activity not found')
+      const data = body as UpdateActivity
+      const updated = { ...existing, ...data, updatedAt: new Date().toISOString() }
+      all[all.indexOf(existing)] = updated
       setItems(ACTIVITIES_KEY, all)
-      return json(all[index])
+      return json(updated.id)
     },
   },
 
@@ -139,12 +132,13 @@ const routes: Route[] = [
     pattern: /^\/activities\/([^/]+)\/archive$/,
     handler: ({ match }) => {
       const all = getItems<Activity>(ACTIVITIES_KEY)
-      const index = all.findIndex((a) => a.id === match[1])
-      if (index === -1) return notFound('Activity not found')
+      const existing = all.find((a) => a.id === match[1])
+      if (!existing) return notFound('Activity not found')
       const now = new Date().toISOString()
-      all[index] = { ...all[index]!, archivedAt: now, updatedAt: now }
+      const updated = { ...existing, archivedAt: now, updatedAt: now }
+      all[all.indexOf(existing)] = updated
       setItems(ACTIVITIES_KEY, all)
-      return json(all[index])
+      return json(updated)
     },
   },
 
@@ -154,12 +148,12 @@ const routes: Route[] = [
     pattern: /^\/activities\/([^/]+)\/unarchive$/,
     handler: ({ match }) => {
       const all = getItems<Activity>(ACTIVITIES_KEY)
-      const index = all.findIndex((a) => a.id === match[1])
-      if (index === -1) return notFound('Activity not found')
-      const { archivedAt: _, ...rest } = all[index]!
-      all[index] = { ...rest, updatedAt: new Date().toISOString() } as Activity
+      const existing = all.find((a) => a.id === match[1])
+      if (!existing) return notFound('Activity not found')
+      const updated = { ...existing, archivedAt: null, updatedAt: new Date().toISOString() }
+      all[all.indexOf(existing)] = updated
       setItems(ACTIVITIES_KEY, all)
-      return json(all[index])
+      return json(updated)
     },
   },
 
@@ -210,18 +204,13 @@ const routes: Route[] = [
     method: 'POST',
     pattern: /^\/completions\/?$/,
     handler: ({ body }) => {
-      const data = body as {
-        activityId: string
-        userId: string
-        completedAt: string
-        note?: string
-      }
+      const data = body as CreateCompletion
       const all = getItems<Completion>(COMPLETIONS_KEY)
       const now = new Date().toISOString()
       const completion: Completion = {
         id: crypto.randomUUID(),
         activityId: data.activityId,
-        userId: data.userId,
+        userId: MOCK_USER_ID,
         completedAt: data.completedAt,
         note: data.note,
         createdAt: now,
@@ -229,7 +218,7 @@ const routes: Route[] = [
       }
       all.push(completion)
       setItems(COMPLETIONS_KEY, all)
-      return json(completion, 201)
+      return json(completion.id, 201)
     },
   },
 
@@ -247,27 +236,18 @@ const routes: Route[] = [
     },
   },
 
-  // GET /activity-members?activityId=
+  // GET /activities/:id/members
   {
     method: 'GET',
-    pattern: /^\/activity-members\/?$/,
-    handler: ({ url }) => {
-      const activityId = url.searchParams.get('activityId')
-      let all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
-      if (activityId) {
-        all = all.filter((m) => m.activityId === activityId)
-      }
-      return json({ data: all, total: all.length })
-    },
-  },
-
-  // GET /activity-members/:id
-  {
-    method: 'GET',
-    pattern: /^\/activity-members\/([^/]+)$/,
-    handler: ({ match }) => {
-      const member = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY).find((m) => m.id === match[1])
-      return member ? json(member) : notFound('ActivityMember not found')
+    pattern: /^\/activities\/([^/]+)\/members\/?$/,
+    handler: ({ match, url }) => {
+      const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
+      const offset = parseInt(url.searchParams.get('offset') ?? '0', 10)
+      const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY).filter(
+        (m) => m.activityId === match[1],
+      )
+      const data = all.slice(offset, offset + limit)
+      return json({ data, total: all.length })
     },
   },
 
@@ -290,21 +270,6 @@ const routes: Route[] = [
       all.push(member)
       setItems(ACTIVITY_MEMBERS_KEY, all)
       return json(member, 201)
-    },
-  },
-
-  // PATCH /activity-members/:id
-  {
-    method: 'PATCH',
-    pattern: /^\/activity-members\/([^/]+)$/,
-    handler: ({ match, body }) => {
-      const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
-      const index = all.findIndex((m) => m.id === match[1])
-      if (index === -1) return notFound('ActivityMember not found')
-      const data = body as UpdateActivityMember
-      all[index] = { ...all[index]!, ...data, updatedAt: new Date().toISOString() }
-      setItems(ACTIVITY_MEMBERS_KEY, all)
-      return json(all[index])
     },
   },
 

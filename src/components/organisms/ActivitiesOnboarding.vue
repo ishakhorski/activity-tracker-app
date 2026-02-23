@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BaseButton } from '@/components/atoms/button'
-import IconPlus from '@/assets/icons/plus.svg'
-import IconCloudBoltFill from '@/assets/icons/cloud-bolt-fill.svg'
+import IconPlus from '@/assets/icons/plus.svg?component'
+import IconCloudBoltFill from '@/assets/icons/cloud-bolt-fill.svg?component'
 
 const emit = defineEmits<{
   create: []

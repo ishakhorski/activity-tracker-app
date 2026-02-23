@@ -19,6 +19,7 @@ const props = withDefaults(
     min: 1,
     max: undefined,
     size: 'medium',
+    class: '',
   },
 )
 

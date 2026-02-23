@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BaseButton } from '@/components/atoms/button'
-import IconCloudSunRainFill from '@/assets/icons/cloud-sun-rain-fill.svg'
+import IconCloudSunRainFill from '@/assets/icons/cloud-sun-rain-fill.svg?component'
 
 const emit = defineEmits<{
   clearFilters: []

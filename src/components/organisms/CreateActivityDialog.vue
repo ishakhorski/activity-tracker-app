@@ -17,7 +17,7 @@ import {
   BaseNumberStepperInput,
 } from '@/components/atoms/number-stepper'
 
-import IconBoltFill from '@/assets/icons/bolt-fill.svg'
+import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
 
 import {
   ACTIVITY_SCHEDULE_TYPE,
@@ -27,6 +27,7 @@ import {
   type ActivitySchedule,
 } from '@/types/activitySchedule'
 import { useActivityCreateMutation } from '@/composables/useActivities'
+import { ACTIVITY_TYPE } from '@/types/activityType'
 
 const { createActivity } = useActivityCreateMutation()
 
@@ -46,7 +47,7 @@ const targetLabel = computed(() =>
   targetCompletions.value === 1 ? 'time per day' : 'times per day',
 )
 
-function toggleDay(day: Weekday) {
+const toggleDay = (day: Weekday) => {
   const index = selectedDays.value.indexOf(day)
   if (index >= 0 && selectedDays.value.length > 1) {
     selectedDays.value.splice(index, 1)
@@ -55,18 +56,18 @@ function toggleDay(day: Weekday) {
   }
 }
 
-function isDaySelected(day: Weekday) {
+const isDaySelected = (day: Weekday) => {
   return selectedDays.value.includes(day)
 }
 
-function resetForm() {
+const resetForm = () => {
   title.value = ''
   scheduleType.value = ACTIVITY_SCHEDULE_TYPE.DAILY
   targetCompletions.value = 1
   selectedDays.value = [...WEEKDAYS_ORDERED]
 }
 
-function handleSave() {
+const handleSave = () => {
   if (!title.value.trim()) return
 
   const schedule: ActivitySchedule =
@@ -78,7 +79,12 @@ function handleSave() {
         }
       : { type: ACTIVITY_SCHEDULE_TYPE.DAILY, targetCompletions: targetCompletions.value }
 
-  createActivity({ title: title.value.trim(), schedule })
+  createActivity({
+    type: ACTIVITY_TYPE.PERSONAL,
+    title: title.value.trim(),
+    description: null,
+    schedule,
+  })
   resetForm()
   open.value = false
 }

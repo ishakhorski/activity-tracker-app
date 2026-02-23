@@ -9,7 +9,11 @@ const props = defineProps<{
   class?: HTMLAttributes['class']
 }>()
 
-const context = inject(SEGMENTED_CONTROL_CONTEXT_KEY)!
+const context = inject(SEGMENTED_CONTROL_CONTEXT_KEY)
+
+if (!context) {
+  throw new Error('BaseSegmentedControlButton must be used within a BaseSegmentedControl')
+}
 
 onMounted(() => context.register(props.value))
 onUnmounted(() => context.unregister(props.value))
@@ -17,11 +21,11 @@ onUnmounted(() => context.unregister(props.value))
 const isActive = computed(() => context.modelValue.value === props.value)
 const resolvedSize = computed(() => context.size)
 
-function handleClick() {
+const handleClick = () => {
   context.select(props.value)
 }
 
-function handleKeydown(event: KeyboardEvent) {
+const handleKeydown = (event: KeyboardEvent) => {
   const values = context.values.value
   const currentIndex = values.indexOf(props.value)
   let nextIndex: number | undefined
@@ -40,13 +44,15 @@ function handleKeydown(event: KeyboardEvent) {
     nextIndex = values.length - 1
   }
 
-  const nextValue = nextIndex !== undefined ? values[nextIndex] : undefined
-  if (nextValue) {
-    context.select(nextValue)
-    const el = (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>(
-      '[role="tab"]',
-    )?.[nextIndex!]
-    el?.focus()
+  if (nextIndex !== undefined) {
+    const nextValue = values[nextIndex]
+    if (nextValue) {
+      context.select(nextValue)
+      const el = (event.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>(
+        '[role="tab"]',
+      )?.[nextIndex]
+      el?.focus()
+    }
   }
 }
 </script>

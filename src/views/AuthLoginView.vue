@@ -6,9 +6,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useLoginMutation } from '@/composables/useAuth'
 import { AUTH_CONNECTOR, type AuthConnector } from '@/types/auth'
 
-import IconBoltFill from '@/assets/icons/bolt-fill.svg'
-import IconGoogle from '@/assets/icons/google.svg'
-import IconApple from '@/assets/icons/apple.svg'
+import IconGoogle from '@/assets/icons/google.svg?component'
+import IconApple from '@/assets/icons/apple.svg?component'
+
+import AppLogo from '@/components/molecules/AppLogo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,10 +46,7 @@ onMounted(() => {
 
 <template>
   <div class="w-full max-w-92 flex flex-col items-center">
-    <div class="bolt-wrapper mb-14">
-      <IconBoltFill aria-hidden="true" class="bolt size-18 text-primary" />
-      <IconBoltFill aria-hidden="true" class="bolt-sheen size-18 text-primary" />
-    </div>
+    <AppLogo class="size-18 mb-14" />
 
     <div class="flex flex-col items-center gap-1 animate-[fade-in-bottom_0.5s_ease-out_both] mb-10">
       <h1 class="text-4xl text-primary font-semibold">Pulse</h1>
@@ -57,7 +55,7 @@ onMounted(() => {
 
     <Transition name="auth-swap" mode="out-in">
       <div v-if="!isPending" key="content" class="grid w-full">
-        <div class="overflow-hidden min-h-0">
+        <div class="overflow-hidden min-h-14">
           <p v-if="authError" class="text-xs text-center text-destructive mb-4">{{ authError }}</p>
 
           <p v-else class="text-xs text-center text-muted-foreground mb-2">Sign in to continue</p>
@@ -76,93 +74,37 @@ onMounted(() => {
         </div>
       </div>
 
-      <div v-else key="spinner" class="grid">
-        <div class="overflow-hidden min-h-0 flex justify-center mb-6 py-3">
-          <div
-            class="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
-          />
-        </div>
+      <div v-else key="spinner" class="flex justify-center py-3">
+        <div
+          class="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin"
+        />
       </div>
     </Transition>
   </div>
 </template>
 
 <style scoped>
-.auth-swap-leave-active,
-.auth-swap-enter-active {
+.auth-swap-leave-active {
   transition:
     grid-template-rows 0.25s ease,
     opacity 0.25s ease;
 }
 
-.auth-swap-leave-from,
-.auth-swap-enter-to {
+.auth-swap-enter-active {
+  transition: opacity 0.25s ease;
+}
+
+.auth-swap-leave-from {
   grid-template-rows: 1fr;
 }
 
-.auth-swap-leave-to,
-.auth-swap-enter-from {
+.auth-swap-leave-to {
   grid-template-rows: 0fr;
   opacity: 0;
 }
 
-.bolt-wrapper {
-  position: relative;
-  display: inline-flex;
-}
-
-.bolt {
-  animation: bolt-reveal 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-@property --bolt-sweep {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: -40%;
-}
-
-.bolt-sheen {
-  position: absolute;
-  inset: 0;
-  filter: brightness(3);
-  mask-image: linear-gradient(
-    to bottom,
-    transparent calc(var(--bolt-sweep) - 20%),
-    white var(--bolt-sweep),
-    white calc(var(--bolt-sweep) + 20%),
-    transparent calc(var(--bolt-sweep) + 40%)
-  );
-  animation: bolt-flash 2.5s ease-in-out 0.8s both infinite;
-}
-
-@keyframes bolt-reveal {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    clip-path: inset(0 0 0% 0);
-  }
-}
-
-@keyframes bolt-flash {
-  0%,
-  41%,
-  100% {
-    --bolt-sweep: -40%;
-    opacity: 0;
-  }
-  5% {
-    --bolt-sweep: -20%;
-    opacity: 1;
-  }
-  35% {
-    --bolt-sweep: 120%;
-    opacity: 1;
-  }
-  40% {
-    --bolt-sweep: 140%;
-    opacity: 0;
-  }
+.auth-swap-enter-from {
+  opacity: 0;
 }
 </style>
 

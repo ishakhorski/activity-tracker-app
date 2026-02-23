@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { onLongPress } from '@vueuse/core'
 
 import { BaseButton } from '@/components/atoms/button'
-import IconBolt from '@/assets/icons/bolt.svg'
-import IconBoltFill from '@/assets/icons/bolt-fill.svg'
+import IconBolt from '@/assets/icons/bolt.svg?component'
+import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
 import NoteCompletionDialog from '@/components/organisms/NoteCompletionDialog.vue'
 
 import { getTargetForDay as getTargetForDayFn } from '@/utils/activities'
@@ -77,13 +78,17 @@ const longPressActivated = ref(false)
 const noteDialogOpen = ref(false)
 const pendingCompletedAt = ref<string | null>(null)
 
-function handleTrack() {
+const handleTrack = () => {
   if (longPressActivated.value) {
     longPressActivated.value = false
     return
   }
   trackAnimKey.value++
-  emit('complete', { activityId: props.activity.id, completedAt: new Date().toISOString() })
+  emit('complete', {
+    activityId: props.activity.id,
+    completedAt: new Date().toISOString(),
+    note: null,
+  })
 }
 
 onLongPress(
@@ -96,13 +101,13 @@ onLongPress(
   { delay: 600, distanceThreshold: 8 },
 )
 
-function handleNoteConfirm(note: string) {
+const handleNoteConfirm = (note: string) => {
   if (!pendingCompletedAt.value) return
   trackAnimKey.value++
   emit('complete', {
     activityId: props.activity.id,
     completedAt: pendingCompletedAt.value,
-    note: note || undefined,
+    note: note ?? null,
   })
   pendingCompletedAt.value = null
 }
@@ -112,12 +117,19 @@ function handleNoteConfirm(note: string) {
   <!-- Glass card -->
   <div class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3">
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2">
-        <h3 class="font-semibold text-sm truncate">{{ activity.title }}</h3>
+      <RouterLink
+        :to="{ name: 'activity-details', params: { id: activity.id } }"
+        class="flex items-center gap-2 group"
+      >
+        <h3
+          class="font-semibold text-sm truncate underline underline-offset-2 decoration-foreground/40"
+        >
+          {{ activity.title }}
+        </h3>
         <span class="text-[11px] text-muted-foreground tabular-nums shrink-0">
           {{ todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount > 0 ? todayCount : '' }}
         </span>
-      </div>
+      </RouterLink>
 
       <div class="flex items-end gap-1 mt-2">
         <div
@@ -139,6 +151,7 @@ function handleNoteConfirm(note: string) {
               emit('complete', {
                 activityId: activity.id,
                 completedAt: day.dayStart.toISOString(),
+                note: null,
               })
             "
           >
@@ -185,9 +198,9 @@ function handleNoteConfirm(note: string) {
     <div class="relative flex flex-col items-center gap-1">
       <div
         ref="trackBtnWrapRef"
+        :key="trackAnimKey"
         class="track-btn-wrap"
         :class="trackAnimKey > 0 ? 'is-animated' : ''"
-        :key="trackAnimKey"
         @contextmenu.prevent
       >
         <BaseButton

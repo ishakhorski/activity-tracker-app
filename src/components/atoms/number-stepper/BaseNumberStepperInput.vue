@@ -8,17 +8,20 @@ const props = defineProps<{
   class?: HTMLAttributes['class']
 }>()
 
-const context = inject(NUMBER_STEPPER_CONTEXT_KEY)!
+const context = inject(NUMBER_STEPPER_CONTEXT_KEY)
+if (!context) {
+  throw new Error('BaseNumberStepperInput must be used within a BaseNumberStepper')
+}
 
 const resolvedSize = computed(() => context.size)
 
-function onInput(event: Event) {
+const onInput = (event: Event) => {
   const value = parseInt((event.target as HTMLInputElement).value, 10)
   if (isNaN(value)) return
   context.updateValue(value)
 }
 
-function onBlur(event: FocusEvent) {
+const onBlur = (event: FocusEvent) => {
   const el = event.target as HTMLInputElement
   el.value = String(context.modelValue.value)
 }

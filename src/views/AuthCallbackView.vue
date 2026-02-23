@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useAuth0 } from '@/plugins/auth0Plugin'
 
+import AppLogo from '@/components/molecules/AppLogo.vue'
+
 const route = useRoute()
 const router = useRouter()
 const { handleRedirectCallback } = useAuth0()
@@ -36,5 +38,5 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  <AppLogo class="size-18" />
 </template>

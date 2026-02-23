@@ -21,6 +21,7 @@ const props = withDefaults(
   {
     as: 'button',
     size: 'medium',
+    class: '',
   },
 )
 

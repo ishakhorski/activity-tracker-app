@@ -1,6 +1,6 @@
-import { http } from "./http";
+import { http } from './http'
 
-import type { Completion, CreateCompletion } from "@/types/completion";
+import type { Completion, CreateCompletion } from '@/types/completion'
 
 export const getCompletionsByDateRange = (
   from: string,
@@ -9,14 +9,14 @@ export const getCompletionsByDateRange = (
   const params: Record<string, string> = {
     from,
     to,
-  };
-  return http.get<{ data: Completion[]; total: number }>("/completions", { params });
-};
+  }
+  return http.get<{ data: Completion[]; total: number }>('/completions', { params })
+}
 
 export const createCompletion = (data: CreateCompletion): Promise<string> => {
-  return http.post<string>("/completions", data);
-};
+  return http.post<string>('/completions', data)
+}
 
 export const deleteCompletion = (id: string): Promise<void> => {
-  return http.delete<void>(`/completions/${id}`);
-};
+  return http.delete(`/completions/${id}`)
+}

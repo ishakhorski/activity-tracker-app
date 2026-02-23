@@ -1,13 +1,8 @@
 import { globalIgnores } from 'eslint/config'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import pluginVue from 'eslint-plugin-vue'
-import pluginOxlint from 'eslint-plugin-oxlint'
+import stylistic from '@stylistic/eslint-plugin'
 import skipFormatting from 'eslint-config-prettier/flat'
-
-// To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
-// import { configureVueProject } from '@vue/eslint-config-typescript'
-// configureVueProject({ scriptLangs: ['ts', 'tsx'] })
-// More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
 
 export default defineConfigWithVueTs(
   {
@@ -17,8 +12,10 @@ export default defineConfigWithVueTs(
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
-  ...pluginVue.configs['flat/essential'],
-  vueTsConfigs.recommended,
+  ...pluginVue.configs['flat/recommended'],
+  vueTsConfigs.strict,
+
+  stylistic.configs['recommended'],
 
   {
     name: 'app/custom-rules',
@@ -30,7 +27,6 @@ export default defineConfigWithVueTs(
     },
   },
 
-  ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
-
+  // Must be last — disables all ESLint/Stylistic rules that conflict with Prettier
   skipFormatting,
 )

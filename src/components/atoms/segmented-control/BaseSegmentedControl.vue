@@ -15,6 +15,7 @@ const props = withDefaults(
   }>(),
   {
     size: 'medium',
+    class: '',
   },
 )
 

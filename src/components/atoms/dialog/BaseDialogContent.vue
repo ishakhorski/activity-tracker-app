@@ -12,7 +12,7 @@ import {
   type DialogContentProps,
 } from 'reka-ui'
 
-import IconClose from '@/assets/icons/close.svg'
+import IconClose from '@/assets/icons/close.svg?component'
 
 import BaseDialogOverlay from './BaseDialogOverlay.vue'
 import { baseDialogCloseButtonVariation, baseDialogContentVariation } from './index'
@@ -22,16 +22,14 @@ defineOptions({
 })
 
 const props = withDefaults(
-  defineProps<
-    DialogContentProps & { class?: HTMLAttributes['class']; showCloseButton?: boolean }
-  >(),
+  defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>(),
   {
-    showCloseButton: true,
+    class: '',
   },
 )
 const emits = defineEmits<DialogContentEmits>()
 
-const delegatedProps = reactiveOmit(props, 'class', 'showCloseButton')
+const delegatedProps = reactiveOmit(props, 'class')
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
@@ -45,7 +43,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     >
       <slot />
 
-      <DialogClose v-if="showCloseButton" :class="baseDialogCloseButtonVariation()">
+      <DialogClose :class="baseDialogCloseButtonVariation()">
         <IconClose class="size-4" />
         <span class="sr-only">Close</span>
       </DialogClose>

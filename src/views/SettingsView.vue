@@ -9,9 +9,9 @@ import { BaseButton } from '@/components/atoms/button'
 import { useLogoutMutation } from '@/composables/useAuth'
 import { useTheme } from '@/composables/useTheme'
 
-import IconSystem from '@/assets/icons/system.svg'
-import IconSunFill from '@/assets/icons/sun-fill.svg'
-import IconMoonFill from '@/assets/icons/moon-fill.svg'
+import IconSystem from '@/assets/icons/system.svg?component'
+import IconSunFill from '@/assets/icons/sun-fill.svg?component'
+import IconMoonFill from '@/assets/icons/moon-fill.svg?component'
 
 const { signOut, isPending } = useLogoutMutation()
 const { theme } = useTheme()

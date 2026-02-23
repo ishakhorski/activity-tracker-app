@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import IconBolt from '@/assets/icons/bolt.svg'
-import IconChart from '@/assets/icons/chart.svg'
-import IconPlus from '@/assets/icons/plus.svg'
+import IconBolt from '@/assets/icons/bolt.svg?component'
+import IconChart from '@/assets/icons/chart.svg?component'
+import IconPlus from '@/assets/icons/plus.svg?component'
 import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 
 const { openCreateActivityDialog } = useCreateActivityDialog()
@@ -12,7 +12,7 @@ const { openCreateActivityDialog } = useCreateActivityDialog()
     <div class="flex items-center">
       <RouterLink
         to="/activities"
-        exact-active-class="text-primary bg-primary/15 ring-1 ring-white/20"
+        active-class="text-primary bg-primary/15 ring-1 ring-white/20"
         class="w-20 h-14 flex flex-col items-center justify-center rounded-full text-xs font-medium transition-colors duration-150"
       >
         <IconBolt class="size-6" />
@@ -30,7 +30,7 @@ const { openCreateActivityDialog } = useCreateActivityDialog()
 
       <RouterLink
         to="/stats"
-        exact-active-class="text-primary bg-primary/15 ring-1 ring-white/20"
+        active-class="text-primary bg-primary/15 ring-1 ring-white/20"
         class="w-20 h-14 flex flex-col items-center justify-center rounded-full text-xs font-medium transition-colors duration-150"
       >
         <IconChart class="size-6" />
