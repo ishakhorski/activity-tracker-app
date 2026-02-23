@@ -8,78 +8,65 @@ import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vu
 import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
 
 import { useActivitiesQuery } from '@/composables/useActivities'
-import { isScheduledToday } from '@/utils/activities'
+import { isScheduledToday, isTargetMet } from '@/utils/activities'
 import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
 import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
 import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 
+const { openCreateActivityDialog } = useCreateActivityDialog()
+const { addCompletion } = useCompletionCreateMutation()
+
 const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery()
 const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery()
+
+const isLoading = computed(() => activitiesLoading.value || completionsLoading.value)
 
 const activities = computed(() => activitiesData.value ?? [])
 const completions = computed(() => completionsData.value ?? [])
 
-function getCompletions(activityId: string) {
-  return getCompletionsByActivity(completions.value, activityId)
-}
-
-function getTodayCount(activityId: string) {
-  return getTodayCompletionCount(completions.value, activityId)
-}
-const { addCompletion } = useCompletionCreateMutation()
-
-const loading = computed(() => activitiesLoading.value || completionsLoading.value)
-
-const { openCreateActivityDialog } = useCreateActivityDialog()
-
-// --- Sorting ---
-
 const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
-
-function isTargetMet(activity: (typeof activities.value)[number]): boolean {
-  const count = getTodayCount(activity.id)
-  if (!isScheduledToday(activity)) return count > 0
-  return count >= activity.schedule.targetCompletions
-}
-
-function getSortGroup(activity: (typeof activities.value)[number]): number {
-  if (isTargetMet(activity)) return 2
-  if (!isScheduledToday(activity)) return 1
-  return 0
-}
+const activeActivityMeta = computed(() =>
+  activeActivities.value.map((a) => {
+    const count = getTodayCompletionCount(completions.value, a.id)
+    const met = isTargetMet(a, count)
+    const group = met ? 2 : !isScheduledToday(a) ? 1 : 0
+    return { activity: a, met, group }
+  }),
+)
 
 const completedOrder = ref<Map<string, number>>(new Map())
 let completedSeq = 0
 
 watch(
-  () => activeActivities.value.map((a) => isTargetMet(a)),
+  () => activeActivityMeta.value.map((m) => m.met),
   (curr, prev) => {
-    activeActivities.value.forEach((a, i) => {
+    activeActivityMeta.value.forEach((m, i) => {
       const justCompleted = curr[i] && (!prev || !prev[i])
-      if (justCompleted && !completedOrder.value.has(a.id)) {
-        completedOrder.value.set(a.id, completedSeq++)
+      if (justCompleted && !completedOrder.value.has(m.activity.id)) {
+        completedOrder.value.set(m.activity.id, completedSeq++)
       }
       if (!curr[i]) {
-        completedOrder.value.delete(a.id)
+        completedOrder.value.delete(m.activity.id)
       }
     })
   },
   { immediate: true },
 )
 
-const sortedActivities = computed(() => {
-  return [...activeActivities.value].sort((a, b) => {
-    const aGroup = getSortGroup(a)
-    const bGroup = getSortGroup(b)
-    if (aGroup !== bGroup) return aGroup - bGroup
-    if (aGroup === 2) {
-      const aOrder = completedOrder.value.get(a.id) ?? 0
-      const bOrder = completedOrder.value.get(b.id) ?? 0
-      return bOrder - aOrder
-    }
-    return 0
-  })
-})
+const sortedActivities = computed(() =>
+  [...activeActivityMeta.value]
+    .sort((a, b) => {
+      if (a.group !== b.group) return a.group - b.group
+      if (a.group === 2) {
+        return (
+          (completedOrder.value.get(b.activity.id) ?? 0) -
+          (completedOrder.value.get(a.activity.id) ?? 0)
+        )
+      }
+      return 0
+    })
+    .map((m) => m.activity),
+)
 </script>
 
 <template>
@@ -88,32 +75,26 @@ const sortedActivities = computed(() => {
   </PageHeader>
 
   <PageContent>
-    <ActivityCardSkeleton v-if="loading" :count="4" />
+    <ActivityCardSkeleton v-if="isLoading" :count="4" />
 
     <ActivitiesOnboarding
       v-else-if="sortedActivities.length === 0"
       @create="openCreateActivityDialog"
     />
 
-    <TransitionGroup
-      v-else
-      name="activity-list"
-      appear
-      tag="div"
-      class="relative flex flex-col gap-3"
-    >
-      <div v-for="activity in sortedActivities" :key="activity.id">
-        <ActivityCard
-          :activity="activity"
-          :completions="getCompletions(activity.id)"
-          @complete="addCompletion"
-        />
-      </div>
+    <TransitionGroup v-else tag="div" name="activity-list" class="relative flex flex-col gap-3">
+      <ActivityCard
+        v-for="activity in sortedActivities"
+        :key="activity.id"
+        :activity="activity"
+        :completions="getCompletionsByActivity(completions, activity.id)"
+        @complete="addCompletion"
+      />
     </TransitionGroup>
   </PageContent>
 </template>
 
-<style scoped>
+<style>
 .activity-list-move,
 .activity-list-enter-active,
 .activity-list-leave-active {
@@ -125,7 +106,6 @@ const sortedActivities = computed(() => {
 .activity-list-enter-from,
 .activity-list-leave-to {
   opacity: 0;
-  transform: translateY(12px);
 }
 
 .activity-list-leave-active {

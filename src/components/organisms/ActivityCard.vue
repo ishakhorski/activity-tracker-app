@@ -157,20 +157,14 @@ const handleNoteConfirm = (note: string) => {
               class="absolute inset-0 rounded-md bg-primary/8"
             />
             <span
-              v-if="day.count > 0"
-              class="relative z-1 flex items-center justify-center w-full h-full text-[10px] font-medium"
-              :class="
-                !day.isScheduled
-                  ? 'text-muted-foreground'
-                  : day.count >= day.dayTarget
-                    ? 'text-primary'
-                    : 'text-primary/75'
-              "
+              v-if="day.count > 0 && (day.dayTarget === 0 || day.count >= day.dayTarget)"
+              class="relative z-1 flex items-center justify-center w-full h-full"
+              :class="day.dayTarget > 0 ? 'text-primary' : 'text-muted-foreground'"
             >
-              {{ day.count }}
+              <IconBoltFill class="h-3 w-auto" aria-hidden="true" />
             </span>
             <span
-              v-else-if="day.isScheduled"
+              v-else-if="day.count === 0 && day.isScheduled"
               class="relative z-1 flex items-center justify-center w-full h-full text-muted-foreground/30"
             >
               <IconBolt class="h-3 w-auto" aria-hidden="true" />
