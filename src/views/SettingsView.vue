@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
+
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
 import {
@@ -12,6 +14,8 @@ import { useTheme } from '@/composables/useTheme'
 import IconSystem from '@/assets/icons/system.svg?component'
 import IconSunFill from '@/assets/icons/sun-fill.svg?component'
 import IconMoonFill from '@/assets/icons/moon-fill.svg?component'
+import IconArchive from '@/assets/icons/archive.svg?component'
+import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 
 const { signOut, isPending } = useLogoutMutation()
 const { theme } = useTheme()
@@ -44,7 +48,20 @@ const { theme } = useTheme()
         </BaseSegmentedControl>
       </div>
 
-      <BaseButton variant="secondary" :disabled="isPending" @click="signOut"> Sign out </BaseButton>
+      <RouterLink
+        :to="{ name: 'archived-view' }"
+        class="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4 transition-colors active:bg-foreground/5"
+      >
+        <div class="flex items-center gap-3 text-sm font-medium">
+          <IconArchive class="size-4 text-muted-foreground" aria-hidden="true" />
+          Archive
+        </div>
+        <IconArrowRight class="size-4 text-muted-foreground/40" aria-hidden="true" />
+      </RouterLink>
+
+      <BaseButton variant="secondary" :disabled="isPending" class="mt-4" @click="signOut">
+        Sign out
+      </BaseButton>
     </div>
   </PageContent>
 </template>

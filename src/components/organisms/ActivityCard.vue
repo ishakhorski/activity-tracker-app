@@ -143,17 +143,9 @@ const handleNoteConfirm = (note: string) => {
           >
             {{ day.weekday }}
           </span>
-          <button
-            class="relative w-7 h-7 rounded-md overflow-hidden cursor-pointer transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <div
+            class="relative w-7 h-7 rounded-md overflow-hidden"
             :class="day.isScheduled ? 'bg-foreground/5' : 'bg-foreground/[0.02]'"
-            :aria-label="`${day.isToday ? 'Today' : day.weekday + ' ' + day.date}: ${day.count}${day.dayTarget > 0 ? ' of ' + day.dayTarget : ''} completions`"
-            @click="
-              emit('complete', {
-                activityId: activity.id,
-                completedAt: day.dayStart.toISOString(),
-                note: null,
-              })
-            "
           >
             <div
               v-if="day.count > 0 && day.dayTarget > 0"
@@ -184,7 +176,7 @@ const handleNoteConfirm = (note: string) => {
             >
               <IconBolt class="h-3 w-auto" aria-hidden="true" />
             </span>
-          </button>
+          </div>
           <span
             class="text-[10px] leading-none tabular-nums"
             :class="day.isToday ? 'text-primary font-semibold' : 'text-muted-foreground/60'"

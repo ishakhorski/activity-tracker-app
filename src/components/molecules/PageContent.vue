@@ -18,7 +18,7 @@ const props = defineProps<{
       aria-hidden="true"
     />
 
-    <main :class="twMerge('h-full overflow-y-auto px-safe pt-4 pb-24', props.class)">
+    <main :class="twMerge('h-full overflow-y-auto px-safe pt-4 pb-26', props.class)">
       <slot />
     </main>
   </div>

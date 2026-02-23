@@ -1,3 +1,4 @@
+import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 
 import type { Completion, CreateCompletion } from '@/types/completion'
@@ -12,6 +13,22 @@ import { useAuth } from '@/composables/useAuth'
 const COMPLETIONS_QUERY_KEY = ['complitions'] as const
 
 // --- Query ---
+
+export const useActivityMonthCompletionsQuery = (
+  activityId: Ref<string>,
+  year: Ref<number>,
+  month: Ref<number>,
+) => {
+  return useQuery({
+    queryKey: computed(() => ['completions', 'month', activityId.value, year.value, month.value]),
+    queryFn: async () => {
+      const from = new Date(year.value, month.value, 1)
+      const to = new Date(year.value, month.value + 1, 0, 23, 59, 59, 999)
+      const response = await getCompletionsByDateRange(from.toISOString(), to.toISOString())
+      return response.data.filter((c) => c.activityId === activityId.value)
+    },
+  })
+}
 
 export const useCompletionsQuery = () => {
   return useQuery({
@@ -67,6 +84,7 @@ export const useCompletionCreateMutation = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: ['completions', 'month'] })
     },
   })
 

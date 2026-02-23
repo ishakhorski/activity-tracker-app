@@ -4,7 +4,7 @@ import { AUTH_ROLE, type AuthRole } from '@/types/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    layout?: 'auth' | 'main' | 'empty'
+    layout?: 'auth' | 'main' | 'secondary' | 'empty'
     roles?: AuthRole[]
   }
 }
@@ -52,6 +52,12 @@ const router = createRouter({
       name: 'settings-view',
       component: () => import('@/views/SettingsView.vue'),
       meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
+    },
+    {
+      path: '/settings/archived',
+      name: 'archived-view',
+      component: () => import('@/views/ArchivedActivitiesView.vue'),
+      meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
     },
   ],
 })

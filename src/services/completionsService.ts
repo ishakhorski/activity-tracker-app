@@ -9,6 +9,7 @@ export const getCompletionsByDateRange = (
   const params: Record<string, string> = {
     from,
     to,
+    limit: '1000',
   }
   return http.get<{ data: Completion[]; total: number }>('/completions', { params })
 }
