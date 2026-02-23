@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useConfirmDialog } from '@vueuse/core'
 
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
 import ActivityCard from '@/components/organisms/ActivityCard.vue'
-import ActivityCardSkeleton from '@/components/organisms/ActivityCardSkeleton.vue'
+import ActivitiesSkeleton from '@/components/organisms/ActivitiesSkeleton.vue'
 import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
+import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
 
 import { useActivitiesQuery } from '@/composables/useActivities'
 import { isScheduledToday, isTargetMet } from '@/utils/activities'
 import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
 import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
 import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
+
+import type { CreateCompletion } from '@/types/completion'
 
 const { openCreateActivityDialog } = useCreateActivityDialog()
 const { addCompletion } = useCompletionCreateMutation()
@@ -67,6 +71,31 @@ const sortedActivities = computed(() =>
     })
     .map((m) => m.activity),
 )
+
+const handleAddCompletion = async (activityId: string) => {
+  addCompletion({
+    activityId: activityId,
+    note: null,
+    completedAt: new Date().toISOString(),
+  })
+}
+
+const {
+  isRevealed: isCompletionDialog,
+  reveal: openCompletionDialog,
+  confirm: confirmCompletionDialog,
+  cancel: cancelCompletionDialog,
+} = useConfirmDialog<Omit<CreateCompletion, 'activityId'>>()
+const handleAddCompletionWithNote = async (activityId: string) => {
+  const { data, isCanceled } = await openCompletionDialog()
+  if (!isCanceled && data) {
+    addCompletion({
+      activityId: activityId,
+      note: data.note,
+      completedAt: new Date().toISOString(),
+    })
+  }
+}
 </script>
 
 <template>
@@ -75,7 +104,7 @@ const sortedActivities = computed(() =>
   </PageHeader>
 
   <PageContent>
-    <ActivityCardSkeleton v-if="isLoading" :count="4" />
+    <ActivitiesSkeleton v-if="isLoading" :count="4" />
 
     <ActivitiesOnboarding
       v-else-if="sortedActivities.length === 0"
@@ -85,13 +114,20 @@ const sortedActivities = computed(() =>
     <TransitionGroup v-else tag="div" name="activity-list" class="relative flex flex-col gap-3">
       <ActivityCard
         v-for="activity in sortedActivities"
-        :key="activity.id"
+        :key="activity.title"
         :activity="activity"
         :completions="getCompletionsByActivity(completions, activity.id)"
-        @complete="addCompletion"
+        @complete="handleAddCompletion(activity.id)"
+        @complete:long-press="handleAddCompletionWithNote(activity.id)"
       />
     </TransitionGroup>
   </PageContent>
+
+  <CreateCompletionDialog
+    v-model:open="isCompletionDialog"
+    :cancel="cancelCompletionDialog"
+    :confirm="confirmCompletionDialog"
+  />
 </template>
 
 <style>

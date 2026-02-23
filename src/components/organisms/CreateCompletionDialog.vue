@@ -12,34 +12,44 @@ import {
 import { BaseButton } from '@/components/atoms/button'
 import { BaseTextarea } from '@/components/atoms/textarea'
 
-const open = defineModel<boolean>('open', { default: false })
-
-const emit = defineEmits<{
-  confirm: [note: string]
+const props = defineProps<{
+  confirm: (data: { note: string }) => void
+  cancel: () => void
 }>()
+
+const open = defineModel<boolean>('open', { default: false })
 
 const note = ref('')
 
-function handleConfirm() {
-  emit('confirm', note.value.trim())
+const handleConfirm = () => {
+  props.confirm({
+    note: note.value.trim(),
+  })
   note.value = ''
   open.value = false
 }
 
-function handleCancel() {
+const handleCancel = () => {
+  props.cancel()
   note.value = ''
   open.value = false
+}
+
+const handleUpdate = (newOpen: boolean) => {
+  if (!newOpen) {
+    handleCancel()
+  }
 }
 </script>
 
 <template>
-  <BaseDialog v-model:open="open">
-    <BaseDialogContent :show-close-button="false">
+  <BaseDialog :open="open" @update:open="handleUpdate">
+    <BaseDialogContent as="form" @submit.prevent>
       <BaseDialogHeader>
-        <BaseDialogTitle>Add a note</BaseDialogTitle>
-        <BaseDialogDescription
-          >Optional. Describe what you did or how it went.</BaseDialogDescription
-        >
+        <BaseDialogTitle> Add a note </BaseDialogTitle>
+        <BaseDialogDescription>
+          Optional. Describe what you did or how it went.
+        </BaseDialogDescription>
       </BaseDialogHeader>
 
       <div class="grid gap-2">
@@ -53,8 +63,8 @@ function handleCancel() {
       </div>
 
       <BaseDialogFooter>
-        <BaseButton variant="secondary" @click="handleCancel">Cancel</BaseButton>
-        <BaseButton @click="handleConfirm">Complete</BaseButton>
+        <BaseButton variant="secondary" type="button" @click="handleCancel"> Cancel </BaseButton>
+        <BaseButton type="submit" @click="handleConfirm"> Complete </BaseButton>
       </BaseDialogFooter>
     </BaseDialogContent>
   </BaseDialog>

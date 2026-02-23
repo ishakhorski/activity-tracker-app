@@ -2,15 +2,15 @@
 import { computed, ref } from 'vue'
 import { onLongPress } from '@vueuse/core'
 
-import { BaseButton } from '@/components/atoms/button'
-import IconBolt from '@/assets/icons/bolt.svg?component'
-import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
-import NoteCompletionDialog from '@/components/organisms/NoteCompletionDialog.vue'
-
 import { getTargetForDay as getTargetForDayFn } from '@/utils/activities'
 
+import { BaseButton } from '@/components/atoms/button'
+
+import IconBolt from '@/assets/icons/bolt.svg?component'
+import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
+
 import type { Activity } from '@/types/activity'
-import type { Completion, CreateCompletion } from '@/types/completion'
+import type { Completion } from '@/types/completion'
 
 const props = defineProps<{
   activity: Activity
@@ -18,7 +18,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  complete: [payload: CreateCompletion]
+  complete: [id: string]
+  'complete:long-press': [id: string]
 }>()
 
 // --- Last 7 days ---
@@ -74,8 +75,6 @@ const targetMet = computed(() => todayTarget.value > 0 && todayCount.value >= to
 const trackAnimKey = ref(0)
 const trackBtnWrapRef = ref<HTMLDivElement | null>(null)
 const longPressActivated = ref(false)
-const noteDialogOpen = ref(false)
-const pendingCompletedAt = ref<string | null>(null)
 
 const handleTrack = () => {
   if (longPressActivated.value) {
@@ -83,37 +82,20 @@ const handleTrack = () => {
     return
   }
   trackAnimKey.value++
-  emit('complete', {
-    activityId: props.activity.id,
-    completedAt: new Date().toISOString(),
-    note: null,
-  })
+  emit('complete', props.activity.id)
 }
 
 onLongPress(
   trackBtnWrapRef,
   () => {
     longPressActivated.value = true
-    pendingCompletedAt.value = new Date().toISOString()
-    noteDialogOpen.value = true
+    emit('complete:long-press', props.activity.id)
   },
   { delay: 600, distanceThreshold: 8 },
 )
-
-const handleNoteConfirm = (note: string) => {
-  if (!pendingCompletedAt.value) return
-  trackAnimKey.value++
-  emit('complete', {
-    activityId: props.activity.id,
-    completedAt: pendingCompletedAt.value,
-    note: note ?? null,
-  })
-  pendingCompletedAt.value = null
-}
 </script>
 
 <template>
-  <!-- Glass card -->
   <div class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3">
     <div class="flex-1 min-w-0">
       <RouterLink
@@ -148,7 +130,7 @@ const handleNoteConfirm = (note: string) => {
           >
             <div
               v-if="day.count > 0 && day.dayTarget > 0"
-              class="absolute inset-x-0 bottom-0 rounded-md transition-all duration-300"
+              class="absolute inset-x-0 bottom-0 transition-all duration-300"
               :class="day.count >= day.dayTarget ? 'bg-primary/25' : 'bg-primary/12'"
               :style="{ height: `${Math.min((day.count / day.dayTarget) * 100, 100)}%` }"
             />
@@ -206,8 +188,6 @@ const handleNoteConfirm = (note: string) => {
         Hold for note
       </span>
     </div>
-
-    <NoteCompletionDialog v-model:open="noteDialogOpen" @confirm="handleNoteConfirm" />
   </div>
 </template>
 
