@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { RouterLink } from 'vue-router'
 import { onLongPress } from '@vueuse/core'
 
 import { BaseButton } from '@/components/atoms/button'
@@ -119,13 +118,12 @@ const handleNoteConfirm = (note: string) => {
     <div class="flex-1 min-w-0">
       <RouterLink
         :to="{ name: 'activity-details', params: { id: activity.id } }"
-        class="flex items-center gap-2 group"
+        class="w-full flex items-center gap-2"
       >
-        <h3
-          class="font-semibold text-sm truncate underline underline-offset-2 decoration-foreground/40"
-        >
+        <h3 class="font-semibold text-sm truncate">
           {{ activity.title }}
         </h3>
+
         <span class="text-[11px] text-muted-foreground tabular-nums shrink-0">
           {{ todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount > 0 ? todayCount : '' }}
         </span>
@@ -144,8 +142,9 @@ const handleNoteConfirm = (note: string) => {
             {{ day.weekday }}
           </span>
           <div
-            class="relative w-7 h-7 rounded-md overflow-hidden"
+            class="relative w-7 h-7 rounded-md overflow-hidden cursor-pointer transition-transform"
             :class="day.isScheduled ? 'bg-foreground/5' : 'bg-foreground/[0.02]'"
+            :aria-label="`${day.isToday ? 'Today' : day.weekday + ' ' + day.date}: ${day.count}${day.dayTarget > 0 ? ' of ' + day.dayTarget : ''} completions`"
           >
             <div
               v-if="day.count > 0 && day.dayTarget > 0"
