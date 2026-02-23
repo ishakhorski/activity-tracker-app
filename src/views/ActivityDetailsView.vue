@@ -255,10 +255,12 @@ const handleDelete = async () => {
 
 <template>
   <PageHeader>
-    <BaseButton :as="RouterLink" :to="backRoute" variant="secondary" size="small" class="w-fit">
-      <IconArrowRight class="rotate-180 size-3.5" aria-hidden="true" />
-      {{ backLabel }}
-    </BaseButton>
+    <RouterLink v-slot="{ navigate }" :to="backRoute" custom>
+      <BaseButton as="a" variant="secondary" size="small" class="w-fit" @click="navigate">
+        <IconArrowRight class="rotate-180 size-3.5" aria-hidden="true" />
+        {{ backLabel }}
+      </BaseButton>
+    </RouterLink>
 
     <div class="flex items-center justify-center">
       <div v-if="activity" class="relative flex items-center">
@@ -429,7 +431,7 @@ const handleDelete = async () => {
 
         <div class="glass rounded-2xl px-4 py-3 flex flex-col gap-1.5">
           <span class="text-xs text-muted-foreground">Description</span>
-          <p v-if="activity.description" class="text-sm leading-relaxed">
+          <p v-if="activity.description" class="text-sm">
             {{ activity.description }}
           </p>
           <p v-else class="text-sm text-muted-foreground/40 italic">No description</p>
