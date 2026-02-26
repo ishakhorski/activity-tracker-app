@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useConfirmDialog } from '@vueuse/core'
 
 import PageHeader from '@/components/molecules/PageHeader.vue'
@@ -10,10 +10,9 @@ import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vu
 import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
 
 import { useActivitiesQuery } from '@/composables/useActivities'
-import { isScheduledToday, isTargetMet } from '@/utils/activities'
 import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
-import { getCompletionsByActivity, getTodayCompletionCount } from '@/utils/completions'
 import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
+import { enrichActivity } from '@/utils/activities'
 
 import type { CreateCompletion } from '@/types/completion'
 
@@ -25,59 +24,14 @@ const { data: completionsData, isLoading: completionsLoading } = useCompletionsQ
 
 const isLoading = computed(() => activitiesLoading.value || completionsLoading.value)
 
-const activities = computed(() => activitiesData.value ?? [])
-const completions = computed(() => completionsData.value ?? [])
+const enrichedActivities = computed(() => {
+  const activities = activitiesData.value ?? []
+  const completions = completionsData.value ?? []
+  return activities.filter((a) => !a.archivedAt).map((a) => enrichActivity(a, completions))
+})
 
-const activeActivities = computed(() => activities.value.filter((a) => !a.archivedAt))
-const activeActivityMeta = computed(() =>
-  activeActivities.value.map((a) => {
-    const count = getTodayCompletionCount(completions.value, a.id)
-    const met = isTargetMet(a, count)
-    const group = met ? 2 : !isScheduledToday(a) ? 1 : 0
-    return { activity: a, met, group }
-  }),
-)
-
-const completedOrder = ref<Map<string, number>>(new Map())
-let completedSeq = 0
-
-watch(
-  () => activeActivityMeta.value.map((m) => m.met),
-  (curr, prev) => {
-    activeActivityMeta.value.forEach((m, i) => {
-      const justCompleted = curr[i] && (!prev || !prev[i])
-      if (justCompleted && !completedOrder.value.has(m.activity.id)) {
-        completedOrder.value.set(m.activity.id, completedSeq++)
-      }
-      if (!curr[i]) {
-        completedOrder.value.delete(m.activity.id)
-      }
-    })
-  },
-  { immediate: true },
-)
-
-const sortedActivities = computed(() =>
-  [...activeActivityMeta.value]
-    .sort((a, b) => {
-      if (a.group !== b.group) return a.group - b.group
-      if (a.group === 2) {
-        return (
-          (completedOrder.value.get(b.activity.id) ?? 0) -
-          (completedOrder.value.get(a.activity.id) ?? 0)
-        )
-      }
-      return 0
-    })
-    .map((m) => m.activity),
-)
-
-const handleAddCompletion = async (activityId: string) => {
-  addCompletion({
-    activityId: activityId,
-    note: null,
-    completedAt: new Date().toISOString(),
-  })
+const handleAddCompletion = (activityId: string) => {
+  addCompletion({ activityId, note: null, completedAt: new Date().toISOString() })
 }
 
 const {
@@ -86,14 +40,11 @@ const {
   confirm: confirmCompletionDialog,
   cancel: cancelCompletionDialog,
 } = useConfirmDialog<Omit<CreateCompletion, 'activityId'>>()
+
 const handleAddCompletionWithNote = async (activityId: string) => {
   const { data, isCanceled } = await openCompletionDialog()
   if (!isCanceled && data) {
-    addCompletion({
-      activityId: activityId,
-      note: data.note,
-      completedAt: new Date().toISOString(),
-    })
+    addCompletion({ activityId, note: data.note, completedAt: new Date().toISOString() })
   }
 }
 </script>
@@ -107,16 +58,15 @@ const handleAddCompletionWithNote = async (activityId: string) => {
     <ActivitiesSkeleton v-if="isLoading" :count="4" />
 
     <ActivitiesOnboarding
-      v-else-if="sortedActivities.length === 0"
+      v-else-if="enrichedActivities.length === 0"
       @create="openCreateActivityDialog"
     />
 
     <TransitionGroup v-else tag="div" name="activity-list" class="relative flex flex-col gap-3">
       <ActivityCard
-        v-for="activity in sortedActivities"
+        v-for="activity in enrichedActivities"
         :key="activity.title"
         :activity="activity"
-        :completions="getCompletionsByActivity(completions, activity.id)"
         @complete="handleAddCompletion(activity.id)"
         @complete:long-press="handleAddCompletionWithNote(activity.id)"
       />

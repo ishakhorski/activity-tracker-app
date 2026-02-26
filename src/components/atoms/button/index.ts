@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
 export const buttonVariation = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap text-sm font-medium rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/40 dark:aria-invalid:ring-destructive/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap text-sm font-medium rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/40 dark:aria-invalid:ring-destructive/50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -11,9 +11,11 @@ export const buttonVariation = cva(
           'glass text-foreground hover:bg-foreground/5 hover:glass-hover active:bg-foreground/10',
       },
       size: {
-        small: 'h-8 gap-1.5 px-3 text-xs has-[>svg]:px-2 active:scale-[0.97]',
-        medium: 'h-10 px-4 has-[>svg]:px-3 active:scale-95',
-        large: 'h-12 px-6 text-base has-[>svg]:px-4 active:scale-[0.97]',
+        small:
+          "h-8 gap-1.5 px-3 text-xs has-[>svg]:px-2 active:scale-[0.97] [&_svg:not([class*='size-'])]:size-3.5",
+        medium: "h-10 px-4 has-[>svg]:px-3 active:scale-95 [&_svg:not([class*='size-'])]:size-4",
+        large:
+          "h-12 px-6 text-base has-[>svg]:px-4 active:scale-[0.97] [&_svg:not([class*='size-'])]:size-5",
       },
     },
     defaultVariants: {

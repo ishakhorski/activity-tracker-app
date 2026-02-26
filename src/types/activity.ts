@@ -1,5 +1,10 @@
 import { type ActivitySchedule } from './activitySchedule'
 import { type ActivityType } from './activityType'
+import type { Completion } from './completion'
+
+export interface EnrichedActivity extends Activity {
+  completionsByDate: Record<string, Completion[]>
+}
 
 export interface Activity {
   id: string
