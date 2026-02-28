@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed, provide } from 'vue'
+import { computed, provide } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import {
@@ -13,7 +13,7 @@ const props = withDefaults(
     min?: number
     max?: number
     size?: NumberStepperVariation['size']
-    class?: HTMLAttributes['class']
+    class?: string
   }>(),
   {
     min: 1,

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -7,7 +6,7 @@ import { DialogTitle, useForwardProps, type DialogTitleProps } from 'reka-ui'
 
 import { baseDialogTitleVariation } from './index'
 
-const props = defineProps<DialogTitleProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<DialogTitleProps & { class?: string }>()
 
 const delegatedProps = reactiveOmit(props, 'class')
 

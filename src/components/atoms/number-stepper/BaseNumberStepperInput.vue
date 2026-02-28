@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed, inject } from 'vue'
+import { computed, inject } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import { numberStepperInputVariation, NUMBER_STEPPER_CONTEXT_KEY } from './index'
 
 const props = defineProps<{
-  class?: HTMLAttributes['class']
+  class?: string
 }>()
 
 const context = inject(NUMBER_STEPPER_CONTEXT_KEY)

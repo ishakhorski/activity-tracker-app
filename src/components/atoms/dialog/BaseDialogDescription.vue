@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -7,7 +6,7 @@ import { DialogDescription, useForwardProps, type DialogDescriptionProps } from 
 
 import { baseDialogDescriptionVariation } from './index'
 
-const props = defineProps<DialogDescriptionProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<DialogDescriptionProps & { class?: string }>()
 
 const delegatedProps = reactiveOmit(props, 'class')
 

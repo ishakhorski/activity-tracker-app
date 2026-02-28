@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed, provide, ref } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import {
@@ -11,7 +11,7 @@ import {
 const props = withDefaults(
   defineProps<{
     size?: SegmentedControlVariation['size']
-    class?: HTMLAttributes['class']
+    class?: string
   }>(),
   {
     size: 'medium',

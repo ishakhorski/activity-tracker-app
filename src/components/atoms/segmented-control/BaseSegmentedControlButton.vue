@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed, inject, onMounted, onUnmounted } from 'vue'
+import { computed, inject, onMounted, onUnmounted } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import { segmentedControlButtonVariation, SEGMENTED_CONTROL_CONTEXT_KEY } from './index'
 
 const props = defineProps<{
   value: string
-  class?: HTMLAttributes['class']
+  class?: string
 }>()
 
 const context = inject(SEGMENTED_CONTROL_CONTEXT_KEY)

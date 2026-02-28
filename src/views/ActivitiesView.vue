@@ -1,52 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useConfirmDialog } from '@vueuse/core'
-
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
+import ActivityCardSkeleton from '@/components/molecules/ActivityCardSkeleton.vue'
+import ActivitiesOnboarding from '@/components/molecules/ActivitiesOnboarding.vue'
+import ActivitiesError from '@/components/molecules/ActivitiesError.vue'
 import ActivityCard from '@/components/organisms/ActivityCard.vue'
-import ActivitiesSkeleton from '@/components/organisms/ActivitiesSkeleton.vue'
-import ActivitiesOnboarding from '@/components/organisms/ActivitiesOnboarding.vue'
 import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
 
-import { useActivitiesQuery } from '@/composables/useActivities'
-import { useCompletionsQuery, useCompletionCreateMutation } from '@/composables/useCompletions'
+import { useEnrichedActivities } from '@/composables/useEnrichedActivities'
 import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
-import { enrichActivity } from '@/utils/activities'
-
-import type { CreateCompletion } from '@/types/completion'
+import { useTrackCompletion } from '@/composables/useTrackCompletion'
 
 const { openCreateActivityDialog } = useCreateActivityDialog()
-const { addCompletion } = useCompletionCreateMutation()
-
-const { data: activitiesData, isLoading: activitiesLoading } = useActivitiesQuery()
-const { data: completionsData, isLoading: completionsLoading } = useCompletionsQuery()
-
-const isLoading = computed(() => activitiesLoading.value || completionsLoading.value)
-
-const enrichedActivities = computed(() => {
-  const activities = activitiesData.value ?? []
-  const completions = completionsData.value ?? []
-  return activities.filter((a) => !a.archivedAt).map((a) => enrichActivity(a, completions))
-})
-
-const handleAddCompletion = (activityId: string) => {
-  addCompletion({ activityId, note: null, completedAt: new Date().toISOString() })
-}
-
 const {
-  isRevealed: isCompletionDialog,
-  reveal: openCompletionDialog,
-  confirm: confirmCompletionDialog,
-  cancel: cancelCompletionDialog,
-} = useConfirmDialog<Omit<CreateCompletion, 'activityId'>>()
+  isCompletionDialog,
+  confirmCompletionDialog,
+  cancelCompletionDialog,
+  complete,
+  completeWithNote,
+} = useTrackCompletion()
 
-const handleAddCompletionWithNote = async (activityId: string) => {
-  const { data, isCanceled } = await openCompletionDialog()
-  if (!isCanceled && data) {
-    addCompletion({ activityId, note: data.note, completedAt: new Date().toISOString() })
-  }
-}
+const { enrichedActivities, isLoading, isError, handleRetry } = useEnrichedActivities()
+
+const cardRefs = new Map<string, { play: () => void }>()
+
+const handleAddCompletion = (activityId: string) =>
+  complete(activityId, () => cardRefs.get(activityId)?.play())
+
+const handleAddCompletionWithNote = (activityId: string) =>
+  completeWithNote(activityId, () => cardRefs.get(activityId)?.play())
 </script>
 
 <template>
@@ -55,7 +37,11 @@ const handleAddCompletionWithNote = async (activityId: string) => {
   </PageHeader>
 
   <PageContent>
-    <ActivitiesSkeleton v-if="isLoading" :count="4" />
+    <div v-if="isLoading" class="flex flex-col gap-3">
+      <ActivityCardSkeleton v-for="i in 4" :key="i" />
+    </div>
+
+    <ActivitiesError v-else-if="isError" @retry="handleRetry" />
 
     <ActivitiesOnboarding
       v-else-if="enrichedActivities.length === 0"
@@ -66,6 +52,12 @@ const handleAddCompletionWithNote = async (activityId: string) => {
       <ActivityCard
         v-for="activity in enrichedActivities"
         :key="activity.title"
+        :ref="
+          (el) => {
+            if (el) cardRefs.set(activity.id, el as any)
+            else cardRefs.delete(activity.id)
+          }
+        "
         :activity="activity"
         @complete="handleAddCompletion(activity.id)"
         @complete:long-press="handleAddCompletionWithNote(activity.id)"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { onLongPress, useCurrentElement } from '@vueuse/core'
+import { onLongPress } from '@vueuse/core'
 
 import { BaseButton } from '@/components/atoms/button'
 import type { ButtonVariation } from '@/components/atoms/button'
@@ -8,7 +8,7 @@ import IconBolt from '@/assets/icons/bolt.svg?component'
 import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
 
 const props = defineProps<{
-  completed?: boolean
+  variant?: ButtonVariation['variant']
   size?: ButtonVariation['size']
 }>()
 
@@ -17,23 +17,34 @@ const emit = defineEmits<{
   'click:long-press': []
 }>()
 
-const el = useCurrentElement<HTMLButtonElement>()
-const isAnimating = ref(false)
+const isAnimated = ref(false)
+const btnEl = ref<HTMLElement | null>(null)
+
 let longPressed = false
 
-const handleClick = async () => {
+const playAnimation = async () => {
+  isAnimated.value = false
+  await nextTick()
+  requestAnimationFrame(() => {
+    isAnimated.value = true
+  })
+}
+
+defineExpose({
+  play: playAnimation,
+})
+
+const handleClick = () => {
   if (longPressed) {
     longPressed = false
     return
   }
-  isAnimating.value = false
-  await nextTick()
-  isAnimating.value = true
+
   emit('click')
 }
 
 onLongPress(
-  el,
+  btnEl,
   () => {
     longPressed = true
     emit('click:long-press')
@@ -44,17 +55,16 @@ onLongPress(
 
 <template>
   <BaseButton
-    :size="props.size ?? 'large'"
-    :variant="props.completed ? 'primary' : 'secondary'"
-    class="relative"
-    :class="{ 'is-animated': isAnimating }"
+    ref="btnEl"
+    :size="props.size"
+    :variant="props.variant"
+    :class="`relative bolt-btn${isAnimated ? ' is-animated' : ''}`"
     @click="handleClick"
     @contextmenu.prevent
   >
-    <IconBoltFill v-if="props.completed" class="bolt-icon" aria-hidden="true" />
-    <IconBolt v-else class="bolt-icon" aria-hidden="true" />
-    <slot></slot>
-    <div v-if="isAnimating" class="track-anim-layer" />
+    <IconBoltFill v-if="props.variant === 'primary'" class="bolt-icon" />
+    <IconBolt v-else class="bolt-icon" />
+    <slot />
   </BaseButton>
 </template>
 
@@ -112,20 +122,26 @@ onLongPress(
   transform-origin: center center;
 }
 
-.is-animated .bolt-icon {
-  animation: icon-shake 0.15s ease-in-out 3;
-}
-
-.track-anim-layer {
+.bolt-btn::after {
+  content: '';
   position: absolute;
   inset: -12px;
   border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.6);
   background: radial-gradient(
     circle,
     color-mix(in oklch, var(--primary) 45%, transparent) 0%,
     transparent 70%
   );
-  pointer-events: none;
+}
+
+.bolt-btn.is-animated .bolt-icon {
+  animation: icon-shake 0.15s ease-in-out 3;
+}
+
+.bolt-btn.is-animated::after {
   animation: glow-flash 0.5s ease-out forwards;
 }
 </style>

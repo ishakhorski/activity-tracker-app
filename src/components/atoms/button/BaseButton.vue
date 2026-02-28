@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -12,7 +11,7 @@ const props = withDefaults(
     PrimitiveProps & {
       variant?: ButtonVariation['variant']
       size?: ButtonVariation['size']
-      class?: HTMLAttributes['class']
+      class?: string
     }
   >(),
   {

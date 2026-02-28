@@ -27,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const monthLabel = computed(() => {
-  const [y, m] = props.from.split('-').map(Number)
+  const [y = 0, m = 1] = props.from.split('-').map(Number)
   return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 })
 

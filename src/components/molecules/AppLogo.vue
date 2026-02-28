@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
 
 const props = defineProps<{
-  class?: HTMLAttributes['class']
+  class?: string
 }>()
 </script>
 

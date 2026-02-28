@@ -1,3 +1,5 @@
+import { format } from 'date-fns'
+
 import type { Activity, EnrichedActivity } from '@/types/activity'
 import type { Completion } from '@/types/completion'
 import {
@@ -6,12 +8,7 @@ import {
   type Weekday,
 } from '@/types/activitySchedule'
 
-export const toLocalDateKey = (date: Date): string => {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
+export const toLocalDateKey = (date: Date): string => format(date, 'yyyy-MM-dd')
 
 export const enrichActivity = (activity: Activity, completions: Completion[]): EnrichedActivity => {
   const completionsByDate: Record<string, Completion[]> = {}
@@ -47,8 +44,6 @@ export const isTargetMet = (activity: Activity, todayCount: number): boolean => 
 }
 
 export type DayStatus = 'completed' | 'partial' | 'uncompleted' | 'none'
-
-export type DayPosition = 'past' | 'today' | 'future'
 
 export const getDayStatus = (count: number, target: number): DayStatus => {
   if (count > 0 && (target === 0 || count >= target)) return 'completed'

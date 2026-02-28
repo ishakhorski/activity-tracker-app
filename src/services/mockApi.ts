@@ -290,7 +290,8 @@ const routes: Route[] = [
 
 // --- Seed data ---
 
-const SEED_KEY = 'mock:seeded_v2'
+const MOCK_KEYS = [ACTIVITIES_KEY, COMPLETIONS_KEY, ACTIVITY_MEMBERS_KEY]
+const SEED_KEY = 'mock:seeded_v3'
 
 function daysAgo(n: number): string {
   const d = new Date()
@@ -299,9 +300,71 @@ function daysAgo(n: number): string {
   return d.toISOString()
 }
 
-function seedMockData(): void {
-  if (localStorage.getItem(SEED_KEY)) return
+// Simple deterministic pseudo-random per (a, b) seed pair
+function pseudoRand(a: number, b: number): number {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
 
+function generateCompletions(
+  activityIdx: number,
+  activityId: string,
+  createdAtStr: string,
+  endAtStr: string,
+  targetPerDay: number,
+  scheduledDays: number[] | null,
+  hitRate: number,
+): Completion[] {
+  const completions: Completion[] = []
+  const start = new Date(createdAtStr)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(endAtStr)
+  end.setHours(0, 0, 0, 0)
+
+  let dayIdx = 0
+  for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1), dayIdx++) {
+    const dayOfWeek = d.getDay()
+    if (scheduledDays && !scheduledDays.includes(dayOfWeek)) continue
+
+    const r = pseudoRand(activityIdx, dayIdx)
+    if (r >= hitRate) continue
+
+    // Occasionally overachieve
+    const count = pseudoRand(activityIdx + 50, dayIdx) < 0.1 ? targetPerDay + 1 : targetPerDay
+
+    for (let i = 0; i < count; i++) {
+      const completedAt = new Date(d)
+      completedAt.setHours(7 + i * 5, Math.floor(pseudoRand(i, dayIdx) * 45), 0, 0)
+      const now = new Date().toISOString()
+      completions.push({
+        id: crypto.randomUUID(),
+        activityId,
+        userId: MOCK_USER_ID,
+        completedAt: completedAt.toISOString(),
+        note: null,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+  }
+
+  return completions
+}
+
+export function resetMockData(): void {
+  MOCK_KEYS.forEach((key) => localStorage.removeItem(key))
+  localStorage.removeItem(SEED_KEY)
+  console.log('[Mock API] Storage cleared')
+}
+
+function seedMockData(): void {
+  const today = new Date().toISOString()
+
+  // --- Active activities ---
+  // 1. Daily × 1 (personal)
+  // 2. Daily × 2 (personal)
+  // 3. Weekly Mon/Wed/Fri × 1 (personal)
+  // 4. Weekly Tue/Thu/Sat × 1 (group)
   const activities: Activity[] = [
     {
       id: 'seed-act-1',
@@ -309,18 +372,18 @@ function seedMockData(): void {
       description: 'Daily jog to start the day fresh.',
       type: 'personal',
       schedule: { type: 'daily', targetCompletions: 1 },
-      createdAt: daysAgo(120),
-      updatedAt: daysAgo(120),
+      createdAt: daysAgo(122),
+      updatedAt: daysAgo(122),
       archivedAt: null,
     },
     {
       id: 'seed-act-2',
-      title: 'Read',
-      description: 'At least one chapter per day.',
+      title: 'Meditation',
+      description: 'Morning and evening sessions.',
       type: 'personal',
-      schedule: { type: 'daily', targetCompletions: 1 },
-      createdAt: daysAgo(90),
-      updatedAt: daysAgo(90),
+      schedule: { type: 'daily', targetCompletions: 2 },
+      createdAt: daysAgo(105),
+      updatedAt: daysAgo(105),
       archivedAt: null,
     },
     {
@@ -329,87 +392,57 @@ function seedMockData(): void {
       description: null,
       type: 'personal',
       schedule: { type: 'weekly', days: [1, 3, 5], targetCompletions: 1 },
-      createdAt: daysAgo(60),
-      updatedAt: daysAgo(60),
+      createdAt: daysAgo(90),
+      updatedAt: daysAgo(90),
       archivedAt: null,
     },
     {
       id: 'seed-act-4',
-      title: 'Meditation',
-      description: 'Morning and evening sessions.',
-      type: 'personal',
-      schedule: { type: 'daily', targetCompletions: 2 },
-      createdAt: daysAgo(40),
-      updatedAt: daysAgo(40),
+      title: 'Book Club',
+      description: 'Weekly group reading sessions.',
+      type: 'group',
+      schedule: { type: 'weekly', days: [2, 4, 6], targetCompletions: 1 },
+      createdAt: daysAgo(118),
+      updatedAt: daysAgo(118),
       archivedAt: null,
+    },
+    // --- Archived activities ---
+    // 5. Daily × 1 — active ~3 months, archived ~5 weeks ago
+    {
+      id: 'seed-act-5',
+      title: 'Evening Journal',
+      description: 'Reflect on the day before sleep.',
+      type: 'personal',
+      schedule: { type: 'daily', targetCompletions: 1 },
+      createdAt: daysAgo(152),
+      updatedAt: daysAgo(35),
+      archivedAt: daysAgo(35),
+    },
+    // 6. Weekly Tue/Thu × 1 — active ~2.5 months, archived ~3 weeks ago
+    {
+      id: 'seed-act-6',
+      title: 'Swimming',
+      description: null,
+      type: 'personal',
+      schedule: { type: 'weekly', days: [2, 4], targetCompletions: 1 },
+      createdAt: daysAgo(110),
+      updatedAt: daysAgo(21),
+      archivedAt: daysAgo(21),
     },
   ]
 
-  // Simple deterministic pseudo-random per (activityIndex, dayIndex)
-  function pseudoRand(a: number, b: number): number {
-    const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453
-    return x - Math.floor(x)
-  }
+  const [act1, act2, act3, act4, act5, act6] = activities
+  const completions: Completion[] = [
+    ...generateCompletions(0, 'seed-act-1', act1!.createdAt, today, 1, null, 0.73),
+    ...generateCompletions(1, 'seed-act-2', act2!.createdAt, today, 2, null, 0.68),
+    ...generateCompletions(2, 'seed-act-3', act3!.createdAt, today, 1, [1, 3, 5], 0.8),
+    ...generateCompletions(3, 'seed-act-4', act4!.createdAt, today, 1, [2, 4, 6], 0.65),
+    // Archived: completions only up to archivedAt
+    ...generateCompletions(4, 'seed-act-5', act5!.createdAt, act5!.archivedAt!, 1, null, 0.77),
+    ...generateCompletions(5, 'seed-act-6', act6!.createdAt, act6!.archivedAt!, 1, [2, 4], 0.72),
+  ]
 
-  const completions: Completion[] = []
-
-  function generateCompletions(
-    activityIdx: number,
-    activityId: string,
-    createdAtStr: string,
-    targetPerDay: number,
-    scheduledDays: number[] | null,
-    hitRate: number,
-  ) {
-    const start = new Date(createdAtStr)
-    start.setHours(0, 0, 0, 0)
-    const end = new Date()
-    end.setHours(0, 0, 0, 0)
-
-    let dayIdx = 0
-    for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1), dayIdx++) {
-      const dayOfWeek = d.getDay()
-      if (scheduledDays && !scheduledDays.includes(dayOfWeek)) continue
-
-      const r = pseudoRand(activityIdx, dayIdx)
-      if (r >= hitRate) continue
-
-      // Occasionally log more than target (overachieve)
-      const overachieve = pseudoRand(activityIdx + 50, dayIdx) < 0.12
-      const count = overachieve ? targetPerDay + 1 : targetPerDay
-
-      for (let i = 0; i < count; i++) {
-        const completedAt = new Date(d)
-        completedAt.setHours(7 + i * 5, Math.floor(pseudoRand(i, dayIdx) * 45), 0, 0)
-        const now = new Date().toISOString()
-        completions.push({
-          id: crypto.randomUUID(),
-          activityId,
-          userId: MOCK_USER_ID,
-          completedAt: completedAt.toISOString(),
-          note: null,
-          createdAt: now,
-          updatedAt: now,
-        })
-      }
-    }
-  }
-
-  generateCompletions(0, 'seed-act-1', activities[0].createdAt, 1, null, 0.73)
-  generateCompletions(1, 'seed-act-2', activities[1].createdAt, 1, null, 0.82)
-  generateCompletions(2, 'seed-act-3', activities[2].createdAt, 1, [1, 3, 5], 0.77)
-  generateCompletions(3, 'seed-act-4', activities[3].createdAt, 2, null, 0.68)
-
-  const existingActivities = getItems<Activity>(ACTIVITIES_KEY)
-  const existingCompletions = getItems<Completion>(COMPLETIONS_KEY)
-  const existingMembers = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
-
-  const seedIds = new Set(activities.map((a) => a.id))
-  const newActivities = activities.filter((a) => !existingActivities.some((e) => e.id === a.id))
-  const newCompletions = completions.filter(
-    (c) => seedIds.has(c.activityId) && !existingCompletions.some((e) => e.id === c.id),
-  )
-  const newMembers = newActivities.map((a) => ({
+  const members: ActivityMember[] = activities.map((a) => ({
     id: crypto.randomUUID(),
     activityId: a.id,
     userId: MOCK_USER_ID,
@@ -418,14 +451,19 @@ function seedMockData(): void {
     updatedAt: a.updatedAt,
   }))
 
-  setItems(ACTIVITIES_KEY, [...existingActivities, ...newActivities])
-  setItems(COMPLETIONS_KEY, [...existingCompletions, ...newCompletions])
-  setItems(ACTIVITY_MEMBERS_KEY, [...existingMembers, ...newMembers])
+  setItems(ACTIVITIES_KEY, activities)
+  setItems(COMPLETIONS_KEY, completions)
+  setItems(ACTIVITY_MEMBERS_KEY, members)
 
   localStorage.setItem(SEED_KEY, '1')
   console.log(
-    `[Mock API] Seeded ${newActivities.length} activities and ${newCompletions.length} completions`,
+    `[Mock API] Seeded ${activities.length} activities (${activities.filter((a) => a.archivedAt).length} archived) and ${completions.length} completions`,
   )
+}
+
+export function resetAndSeedMockData(): void {
+  resetMockData()
+  seedMockData()
 }
 
 // --- Fetch interceptor ---
@@ -472,6 +510,15 @@ export function enableMockApi(options: MockApiOptions = {}): void {
     return originalFetch(input, init)
   }
 
-  seedMockData()
+  if (!localStorage.getItem(SEED_KEY))
+    seedMockData()
+
+    // Expose reset helpers on window for easy use in dev console
+  ;(window as unknown as Record<string, unknown>).__mockApi = {
+    reset: resetMockData,
+    seed: resetAndSeedMockData,
+  }
+
   console.log(`[Mock API] Enabled — using localStorage as backend (delay: ${delay}ms)`)
+  console.log('[Mock API] Dev helpers: window.__mockApi.reset() | window.__mockApi.seed()')
 }

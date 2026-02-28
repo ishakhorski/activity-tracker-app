@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -21,12 +20,9 @@ defineOptions({
   inheritAttrs: false,
 })
 
-const props = withDefaults(
-  defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>(),
-  {
-    class: '',
-  },
-)
+const props = withDefaults(defineProps<DialogContentProps & { class?: string }>(), {
+  class: '',
+})
 const emits = defineEmits<DialogContentEmits>()
 
 const delegatedProps = reactiveOmit(props, 'class')

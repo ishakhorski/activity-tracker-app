@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { twMerge } from 'tailwind-merge'
 
 import { baseDialogFooterVariation } from './index'
 
-const props = defineProps<{ class?: HTMLAttributes['class'] }>()
+const props = withDefaults(defineProps<{ class?: string }>(), { class: '' })
 </script>
 
 <template>

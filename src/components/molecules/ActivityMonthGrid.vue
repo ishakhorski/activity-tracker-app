@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { endOfMonth, format, getISODay, parse } from 'date-fns'
 
 import ActivityBrick from '@/components/molecules/ActivityBrick.vue'
 
-import {
-  DAY_STATUS_BRICK_VARIANT,
-  getDayStatus,
-  getTargetForDay,
-  toLocalDateKey,
-} from '@/utils/activities'
-import type { DayPosition } from '@/utils/activities'
+import { useDaysGrid } from '@/composables/useDaysGrid'
+import { DAY_STATUS_BRICK_VARIANT, getDayStatus, getTargetForDay } from '@/utils/activities'
+import type { DayStatus } from '@/utils/activities'
 
-import type { ActivitySchedule } from '@/types/activitySchedule'
+import type { ActivitySchedule, Weekday } from '@/types/activitySchedule'
 import type { Completion } from '@/types/completion'
 
 const props = defineProps<{
@@ -26,47 +23,36 @@ const emit = defineEmits<{
 }>()
 
 const weekHeaders = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+// ISO header order Mon–Sun maps to Date.getDay() values [1,2,3,4,5,6,0]
+const headerWeekdays = [1, 2, 3, 4, 5, 6, 0]
 
-const todayKey = toLocalDateKey(new Date())
+const isScheduledHeaderDay = (headerIndex: number) => {
+  const weekday = headerWeekdays[headerIndex] ?? 0
+  const schedule = props.schedule
+  return schedule.type === 'daily' || schedule.days.includes(weekday as Weekday)
+}
 
-const parsedFrom = computed(() => {
-  const date = new Date(`${props.from}T00:00:00`)
-  return { year: date.getFullYear(), month: date.getMonth() }
+const fromDate = computed(() => parse(props.from, 'yyyy-MM-dd', new Date()))
+const to = computed(() => format(endOfMonth(fromDate.value), 'yyyy-MM-dd'))
+const firstDayOffset = computed(() => getISODay(fromDate.value) - 1) // Mon = 0, Sun = 6
+
+const { daysGrid } = useDaysGrid({
+  from: () => props.from,
+  to: () => to.value,
 })
 
-const firstDayOffset = computed(
-  () => (new Date(parsedFrom.value.year, parsedFrom.value.month, 1).getDay() + 6) % 7,
-)
+const daysGridData = computed(() => {
+  const record: Record<string, { status: DayStatus; percentage: number | undefined }> = {}
 
-const daysInMonth = computed(() =>
-  new Date(parsedFrom.value.year, parsedFrom.value.month + 1, 0).getDate(),
-)
-
-const days = computed(() =>
-  Array.from({ length: daysInMonth.value }, (_, i) => {
-    const day = i + 1
-    const dateKey = toLocalDateKey(new Date(parsedFrom.value.year, parsedFrom.value.month, day))
-    const position: DayPosition =
-      dateKey === todayKey ? 'today' : dateKey > todayKey ? 'future' : 'past'
-    return { day, dateKey, position }
-  }),
-)
-
-const dayData = computed(() => {
-  const record: Record<
-    string,
-    { dayStatus: ReturnType<typeof getDayStatus>; percentage: number | undefined }
-  > = {}
-  for (let i = 0; i < daysInMonth.value; i++) {
-    const dayStart = new Date(parsedFrom.value.year, parsedFrom.value.month, i + 1)
-    const dateKey = toLocalDateKey(dayStart)
-    const count = props.completionsByDate[dateKey]?.length ?? 0
-    const target = getTargetForDay(props.schedule, dayStart.getDay())
-    record[dateKey] = {
-      dayStatus: getDayStatus(count, target),
+  for (const item of daysGrid.value) {
+    const count = props.completionsByDate[item.dateKey]?.length ?? 0
+    const target = getTargetForDay(props.schedule, item.weekday)
+    record[item.dateKey] = {
+      status: getDayStatus(count, target),
       percentage: target > 0 ? Math.min((count / target) * 100, 100) : undefined,
     }
   }
+
   return record
 })
 </script>
@@ -77,7 +63,10 @@ const dayData = computed(() => {
       <span
         v-for="(label, i) in weekHeaders"
         :key="i"
-        class="text-center text-[10px] text-muted-foreground leading-none"
+        class="text-center text-[10px] leading-none"
+        :class="
+          isScheduledHeaderDay(i) ? 'text-foreground font-medium' : 'text-muted-foreground/40'
+        "
       >
         {{ label }}
       </span>
@@ -87,8 +76,8 @@ const dayData = computed(() => {
       <div v-for="i in firstDayOffset" :key="`offset-${i}`" class="aspect-square" />
 
       <button
-        v-for="day in days"
-        :key="day.day"
+        v-for="day in daysGrid"
+        :key="day.dateKey"
         :disabled="day.position === 'future' || loading"
         class="transition-transform ease-in duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         :class="
@@ -97,8 +86,8 @@ const dayData = computed(() => {
         @click="emit('click', day.dateKey)"
       >
         <ActivityBrick
-          :variant="DAY_STATUS_BRICK_VARIANT[dayData[day.dateKey].dayStatus]"
-          :percentage="dayData[day.dateKey].percentage"
+          :variant="DAY_STATUS_BRICK_VARIANT[daysGridData[day.dateKey]!.status]"
+          :percentage="daysGridData[day.dateKey]!.percentage"
           :class="[
             day.position === 'today' ? 'ring-1 ring-inset ring-primary/50' : '',
             day.position === 'future' ? 'opacity-30' : '',
@@ -109,7 +98,7 @@ const dayData = computed(() => {
             class="relative z-1 text-[9px] leading-none"
             :class="day.position === 'today' ? 'font-bold' : ''"
           >
-            {{ day.day }}
+            {{ day.dayNumber }}
           </span>
         </ActivityBrick>
       </button>

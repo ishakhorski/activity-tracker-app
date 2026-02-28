@@ -26,7 +26,7 @@ import {
   type Weekday,
   type ActivitySchedule,
 } from '@/types/activitySchedule'
-import { useActivityCreateMutation } from '@/composables/useActivities'
+import { useActivityCreateMutation } from '@/composables/mutations/useActivityCreateMutation'
 import { ACTIVITY_TYPE } from '@/types/activityType'
 
 const { createActivity } = useActivityCreateMutation()

@@ -5,6 +5,11 @@ import { useConfirmDialog } from '@vueuse/core'
 
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
+import ActivityScheduleCard from '@/components/molecules/ActivityScheduleCard.vue'
+import ActivityScheduleCardSkeleton from '@/components/molecules/ActivityScheduleCardSkeleton.vue'
+import ActivityDescriptionCard from '@/components/molecules/ActivityDescriptionCard.vue'
+import ActivityDescriptionCardSkeleton from '@/components/molecules/ActivityDescriptionCardSkeleton.vue'
+import ActivityTrackButton from '@/components/molecules/ActivityTrackButton.vue'
 import { BaseButton } from '@/components/atoms/button'
 import {
   BaseDialog,
@@ -18,18 +23,15 @@ import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 import IconArchive from '@/assets/icons/archive.svg?component'
 import ActivityCalendar from '@/components/organisms/ActivityCalendar.vue'
 import ActivityDayDialog from '@/components/organisms/ActivityDayDialog.vue'
-import ActivityTrackButton from '@/components/molecules/ActivityTrackButton.vue'
+import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
+import ActivityError from '@/components/molecules/ActivityError.vue'
 
-import {
-  useActivityQuery,
-  useActivityUpdateMutation,
-  useActivityDeleteMutation,
-} from '@/composables/useActivities'
-import {
-  useActivityMonthCompletionsQuery,
-  useCompletionCreateMutation,
-} from '@/composables/useCompletions'
-import { ACTIVITY_SCHEDULE_TYPE, WEEKDAY_LABELS, WEEKDAYS_ORDERED } from '@/types/activitySchedule'
+import { useActivityQuery } from '@/composables/queries/useActivityQuery'
+import { useCompletionsQuery } from '@/composables/queries/useCompletionsQuery'
+import { useActivityUpdateMutation } from '@/composables/mutations/useActivityUpdateMutation'
+import { useActivityDeleteMutation } from '@/composables/mutations/useActivityDeleteMutation'
+import { useTrackCompletion } from '@/composables/useTrackCompletion'
+import { ACTIVITY_SCHEDULE_TYPE } from '@/types/activitySchedule'
 import { enrichActivity, getDayStatus, getTargetForDay, toLocalDateKey } from '@/utils/activities'
 
 const route = useRoute()
@@ -45,20 +47,6 @@ const backLabel = computed(() => (fromArchive.value ? 'Archive' : 'Activities'))
 const { data: activity, isLoading, isError } = useActivityQuery(id)
 const { updateActivity } = useActivityUpdateMutation()
 const { deleteActivity, isPending: isDeleting } = useActivityDeleteMutation()
-
-const scheduleLabel = computed(() => {
-  const schedule = activity.value?.schedule
-  if (!schedule) return null
-  if (schedule.type === ACTIVITY_SCHEDULE_TYPE.DAILY) {
-    return `${schedule.targetCompletions}× per day`
-  }
-  const days = WEEKDAYS_ORDERED.filter((d) => schedule.days.includes(d))
-    .map((d) => WEEKDAY_LABELS[d])
-    .join(', ')
-  return `${days} · ${schedule.targetCompletions}× per session`
-})
-
-// --- Month navigation ---
 
 const today = new Date()
 const currentFrom = toLocalDateKey(new Date(today.getFullYear(), today.getMonth(), 1))
@@ -77,7 +65,6 @@ const canGoPrev = computed(() => {
 })
 
 const canGoNext = computed(() => viewFrom.value < currentFrom)
-
 const isCurrentMonth = computed(() => viewFrom.value === currentFrom)
 
 const goToToday = () => {
@@ -87,28 +74,28 @@ const goToToday = () => {
 
 const goToPrevMonth = () => {
   slideDirection.value = 'right'
-  const date = new Date(viewYear.value, viewMonth.value - 1, 1)
-  viewFrom.value = toLocalDateKey(date)
+  viewFrom.value = toLocalDateKey(new Date(viewYear.value, viewMonth.value - 1, 1))
 }
 
 const goToNextMonth = () => {
   slideDirection.value = 'left'
-  const date = new Date(viewYear.value, viewMonth.value + 1, 1)
-  viewFrom.value = toLocalDateKey(date)
+  viewFrom.value = toLocalDateKey(new Date(viewYear.value, viewMonth.value + 1, 1))
 }
 
-// --- Month completions ---
+const completionsFrom = computed(() => new Date(viewYear.value, viewMonth.value, 1).toISOString())
+const completionsTo = computed(() =>
+  new Date(viewYear.value, viewMonth.value + 1, 0, 23, 59, 59, 999).toISOString(),
+)
 
-const { data: monthCompletions, isFetching: isCompletionsFetching } =
-  useActivityMonthCompletionsQuery(id, viewYear, viewMonth)
+const { data: monthCompletions, isFetching: isCompletionsFetching } = useCompletionsQuery(
+  completionsFrom,
+  completionsTo,
+)
 
 const gridLoading = computed(
   () => isCompletionsFetching.value && monthCompletions.value === undefined,
 )
-
 const bricksLoading = computed(() => isLoading.value || gridLoading.value)
-
-// --- Enriched activity ---
 
 const enrichedActivity = computed(() =>
   activity.value ? enrichActivity(activity.value, monthCompletions.value ?? []) : null,
@@ -132,9 +119,16 @@ const calendarSchedule = computed(
 
 const calendarCompletionsByDate = computed(() => enrichedActivity.value?.completionsByDate ?? {})
 
-// --- Day dialog ---
+const {
+  addCompletion,
+  isCompletionDialog,
+  confirmCompletionDialog,
+  cancelCompletionDialog,
+  complete,
+  completeWithNote,
+} = useTrackCompletion()
 
-const { addCompletion } = useCompletionCreateMutation()
+const trackBtn = ref<InstanceType<typeof ActivityTrackButton> | null>(null)
 
 const dayDialogDate = ref<Date | null>(null)
 
@@ -154,7 +148,7 @@ const {
 } = useConfirmDialog<{ note: string }>()
 
 const openDayDialog = async (date: string) => {
-  const [y, m, d] = date.split('-').map(Number)
+  const [y = 0, m = 1, d = 1] = date.split('-').map(Number)
   dayDialogDate.value = new Date(y, m - 1, d)
   const { data, isCanceled } = await revealDayDialog()
   if (isCanceled || !dayDialogDate.value) return
@@ -166,11 +160,8 @@ const openDayDialog = async (date: string) => {
   addCompletion({ activityId: id.value, completedAt, note: data?.note || null })
 }
 
-const handleComplete = () => {
-  addCompletion({ activityId: id.value, completedAt: new Date().toISOString(), note: null })
-}
-
-// --- Actions ---
+const handleComplete = () => complete(id.value, () => trackBtn.value?.play())
+const handleCompleteLongPress = () => completeWithNote(id.value, () => trackBtn.value?.play())
 
 const handleArchive = () => updateActivity(id.value, { archivedAt: new Date().toISOString() })
 const handleUnarchive = () => updateActivity(id.value, { archivedAt: null })
@@ -209,7 +200,7 @@ const handleDelete = async () => {
   </PageHeader>
 
   <PageContent>
-    <p v-if="isError" class="text-sm text-muted-foreground text-center py-8">Activity not found.</p>
+    <ActivityError v-if="isError" />
 
     <div v-else class="flex flex-col gap-3">
       <ActivityCalendar
@@ -228,30 +219,13 @@ const handleDelete = async () => {
       />
 
       <template v-if="isLoading">
-        <div class="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
-          <div class="h-4 w-16 rounded-full bg-foreground/8 animate-pulse" />
-          <div class="h-5 w-36 rounded-full bg-foreground/8 animate-pulse" />
-        </div>
-        <div class="glass rounded-2xl px-4 py-3 flex flex-col gap-1.5">
-          <div class="h-4 w-20 rounded-full bg-foreground/8 animate-pulse" />
-          <div class="h-5 w-3/4 rounded-full bg-foreground/8 animate-pulse" />
-        </div>
+        <ActivityScheduleCardSkeleton />
+        <ActivityDescriptionCardSkeleton />
       </template>
 
       <template v-else-if="activity">
-        <div class="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4">
-          <span class="text-xs text-muted-foreground shrink-0">Schedule</span>
-          <span class="text-sm font-medium text-right truncate min-w-0">
-            {{ activity.schedule.type === ACTIVITY_SCHEDULE_TYPE.DAILY ? 'Daily' : 'Weekly' }}
-            · {{ scheduleLabel }}
-          </span>
-        </div>
-
-        <div class="glass rounded-2xl px-4 py-3 flex flex-col gap-1.5">
-          <span class="text-xs text-muted-foreground">Description</span>
-          <p v-if="activity.description" class="text-sm">{{ activity.description }}</p>
-          <p v-else class="text-sm text-muted-foreground/40 italic">No description</p>
-        </div>
+        <ActivityScheduleCard :schedule="activity.schedule" />
+        <ActivityDescriptionCard :description="activity.description" />
       </template>
     </div>
 
@@ -259,12 +233,13 @@ const handleDelete = async () => {
       <Transition name="complete-btn">
         <div v-if="!activity?.archivedAt" class="overflow-hidden">
           <ActivityTrackButton
+            ref="trackBtn"
             size="medium"
             class="w-full"
-            :completed="isCompleted"
+            :variant="isCompleted ? 'primary' : 'secondary'"
             :disabled="isLoading"
             @click="handleComplete"
-            @click:long-press="handleComplete"
+            @click:long-press="handleCompleteLongPress"
           >
             Complete
           </ActivityTrackButton>
@@ -327,6 +302,12 @@ const handleDelete = async () => {
       </BaseDialog>
     </div>
   </PageContent>
+
+  <CreateCompletionDialog
+    v-model:open="isCompletionDialog"
+    :cancel="cancelCompletionDialog"
+    :confirm="confirmCompletionDialog"
+  />
 
   <ActivityDayDialog
     v-model:open="isDayDialogOpen"

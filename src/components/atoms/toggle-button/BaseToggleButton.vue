@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed, provide } from 'vue'
+import { computed, provide } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -15,7 +15,7 @@ const props = withDefaults(
   defineProps<
     PrimitiveProps & {
       size?: ToggleButtonVariation['size']
-      class?: HTMLAttributes['class']
+      class?: string
     }
   >(),
   {

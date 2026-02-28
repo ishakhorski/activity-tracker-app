@@ -9,7 +9,7 @@ import mkcert from 'vite-plugin-mkcert'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), tailwindcss(), svgLoader({ defaultImport: 'component' }), mkcert()],
-  server: { host: true, https: true },
+  server: { host: true },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

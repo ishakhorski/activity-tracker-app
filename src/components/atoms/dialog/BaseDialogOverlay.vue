@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { twMerge } from 'tailwind-merge'
 
@@ -7,7 +6,7 @@ import { DialogOverlay, type DialogOverlayProps } from 'reka-ui'
 
 import { baseDialogOverlayVariation } from './index'
 
-const props = defineProps<DialogOverlayProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<DialogOverlayProps & { class?: string }>()
 
 const delegatedProps = reactiveOmit(props, 'class')
 </script>
