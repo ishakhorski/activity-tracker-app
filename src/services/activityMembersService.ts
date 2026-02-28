@@ -1,11 +1,17 @@
 import { http } from './http'
 
-import type { ActivityMember, CreateActivityMember } from '@/types/activityMember'
+import type {
+  ActivityMember,
+  ActivityMemberWithUser,
+  CreateActivityMember,
+} from '@/types/activityMember'
 
 export const getActivityMembers = (
   activityId: string,
-): Promise<{ data: ActivityMember[]; total: number }> => {
-  return http.get<{ data: ActivityMember[]; total: number }>(`/activities/${activityId}/members`)
+): Promise<{ data: ActivityMemberWithUser[]; total: number }> => {
+  return http.get<{ data: ActivityMemberWithUser[]; total: number }>(
+    `/activities/${activityId}/members`,
+  )
 }
 
 export const createActivityMember = (data: CreateActivityMember): Promise<ActivityMember> => {

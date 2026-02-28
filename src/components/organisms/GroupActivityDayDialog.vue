@@ -11,11 +11,11 @@ import { BaseButton } from '@/components/atoms/button'
 import { BaseTextarea } from '@/components/atoms/textarea'
 import IconBolt from '@/assets/icons/bolt.svg?component'
 
-import type { Completion } from '@/types/completion'
+import type { CompletionWithUser } from '@/types/completion'
 
 const props = defineProps<{
   date: Date | null
-  completions: Completion[]
+  completions: CompletionWithUser[]
   canComplete: boolean
   confirm: (data: { note: string }) => void
   cancel: () => void
@@ -33,6 +33,11 @@ const dateLabel = computed(
       day: 'numeric',
     }) ?? '',
 )
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+
+const initials = (name: string) => name.charAt(0).toUpperCase()
 
 const handleConfirm = () => {
   props.confirm({ note: note.value.trim() })
@@ -62,16 +67,27 @@ const handleUpdate = (newOpen: boolean) => {
             :key="completion.id"
             class="flex items-center gap-3 rounded-xl bg-foreground/4 px-3 py-2.5"
           >
-            <span class="text-xs text-muted-foreground tabular-nums pt-px shrink-0">
-              {{
-                new Date(completion.completedAt).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              }}
-            </span>
-            <p v-if="completion.note" class="text-sm leading-relaxed">{{ completion.note }}</p>
-            <p v-else class="text-sm text-muted-foreground/40 italic">No note</p>
+            <div
+              class="size-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5"
+            >
+              <span class="text-xs font-semibold text-primary leading-none">
+                {{ initials(completion.displayName) }}
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline justify-between gap-2">
+                <span class="text-sm font-medium truncate">{{ completion.displayName }}</span>
+                <span class="text-xs text-muted-foreground tabular-nums shrink-0">
+                  {{ formatTime(completion.completedAt) }}
+                </span>
+              </div>
+              <p
+                v-if="completion.note"
+                class="text-sm text-muted-foreground/70 mt-0.5 leading-snug"
+              >
+                {{ completion.note }}
+              </p>
+            </div>
           </div>
         </template>
 
@@ -82,8 +98,13 @@ const handleUpdate = (newOpen: boolean) => {
 
       <template v-if="canComplete">
         <div class="grid gap-2">
-          <label for="day-note" class="text-sm font-medium">Note</label>
-          <BaseTextarea id="day-note" v-model="note" rows="2" placeholder="e.g. Felt great today" />
+          <label for="group-day-note" class="text-sm font-medium">Note</label>
+          <BaseTextarea
+            id="group-day-note"
+            v-model="note"
+            rows="2"
+            placeholder="e.g. Felt great today"
+          />
         </div>
         <BaseButton variant="primary" class="w-full shrink-0" @click="handleConfirm">
           <IconBolt class="size-4" aria-hidden="true" />

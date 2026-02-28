@@ -15,13 +15,13 @@ const router = createRouter({
     {
       path: '/auth/login',
       name: 'login',
-      component: () => import('@/views/AuthLoginView.vue'),
+      component: () => import('@/views/auth/AuthLoginView.vue'),
       meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
     },
     {
       path: '/auth/callback',
       name: 'auth-callback',
-      component: () => import('@/views/AuthCallbackView.vue'),
+      component: () => import('@/views/auth/AuthCallbackView.vue'),
       meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
     },
 
@@ -32,13 +32,13 @@ const router = createRouter({
     {
       path: '/activities',
       name: 'activities-view',
-      component: () => import('@/views/ActivitiesView.vue'),
+      component: () => import('@/views/activities/ActivitiesView.vue'),
       meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
     },
     {
-      path: '/activities/:id',
+      path: '/activities/:type/:id',
       name: 'activity-details',
-      component: () => import('@/views/ActivityDetailsView.vue'),
+      component: () => import('@/views/activities/ActivityDetailsView.vue'),
       meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
     },
     {
@@ -56,7 +56,7 @@ const router = createRouter({
     {
       path: '/settings/archived',
       name: 'archived-view',
-      component: () => import('@/views/ArchivedActivitiesView.vue'),
+      component: () => import('@/views/activities/ArchivedActivitiesView.vue'),
       meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
     },
   ],

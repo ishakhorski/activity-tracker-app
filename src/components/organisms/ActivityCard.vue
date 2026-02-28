@@ -41,7 +41,7 @@ defineExpose({ play: () => trackBtn.value?.play() })
   <RouterLink
     v-slot="{ navigate }"
     custom
-    :to="{ name: 'activity-details', params: { id: activity.id } }"
+    :to="{ name: 'activity-details', params: { id: activity.id, type: activity.type } }"
   >
     <div
       class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3"
@@ -49,13 +49,17 @@ defineExpose({ play: () => trackBtn.value?.play() })
     >
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
-          <RouterLink :to="{ name: 'activity-details', params: { id: activity.id } }">
+          <RouterLink
+            :to="{ name: 'activity-details', params: { id: activity.id, type: activity.type } }"
+          >
             <h3 class="font-semibold text-sm truncate">{{ activity.title }}</h3>
           </RouterLink>
-          <span class="text-[11px] text-muted-foreground tabular-nums shrink-0">
-            {{
-              todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount > 0 ? todayCount : ''
-            }}
+
+          <span
+            v-if="todayTarget > 0 || todayCount > 0"
+            class="text-[10px] text-muted-foreground tabular-nums leading-none"
+          >
+            {{ todayTarget > 0 ? `${todayCount}/${todayTarget}` : todayCount }}
           </span>
         </div>
 
@@ -64,7 +68,7 @@ defineExpose({ play: () => trackBtn.value?.play() })
           :completions-by-date="activity.completionsByDate"
           :from="weekFrom"
           :to="weekTo"
-          class="mt-2"
+          class="mt-3"
         />
       </div>
 

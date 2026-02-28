@@ -14,3 +14,7 @@ export interface ActivityMember {
 }
 
 export type CreateActivityMember = Omit<ActivityMember, 'id' | 'createdAt' | 'updatedAt'>
+
+export interface ActivityMemberWithUser extends ActivityMember {
+  displayName: string
+}

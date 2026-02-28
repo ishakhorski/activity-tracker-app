@@ -8,4 +8,8 @@ export interface Completion {
   updatedAt: string
 }
 
+export interface CompletionWithUser extends Completion {
+  displayName: string
+}
+
 export type CreateCompletion = Omit<Completion, 'id' | 'userId' | 'createdAt' | 'updatedAt'>

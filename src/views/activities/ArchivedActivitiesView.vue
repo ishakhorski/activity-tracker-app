@@ -77,7 +77,11 @@ function scheduleLabel(activity: (typeof archivedActivities.value)[number]): str
       <RouterLink
         v-for="activity in archivedActivities"
         :key="activity.id"
-        :to="{ name: 'activity-details', params: { id: activity.id }, query: { from: 'archived' } }"
+        :to="{
+          name: 'activity-details',
+          params: { id: activity.id, type: activity.type },
+          query: { from: 'archived' },
+        }"
         class="glass rounded-2xl px-4 py-3 flex items-center gap-4 transition-colors active:bg-foreground/5"
       >
         <div class="flex-1 min-w-0">

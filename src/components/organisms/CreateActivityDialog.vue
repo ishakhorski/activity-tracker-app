@@ -17,8 +17,14 @@ import {
   BaseNumberStepperIncreaseButton,
   BaseNumberStepperInput,
 } from '@/components/atoms/number-stepper'
+import {
+  BaseSegmentedControl,
+  BaseSegmentedControlButton,
+} from '@/components/atoms/segmented-control'
 
 import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
+import IconPerson from '@/assets/icons/person.svg?component'
+import IconGroup from '@/assets/icons/group.svg?component'
 
 import {
   ACTIVITY_SCHEDULE_TYPE,
@@ -36,6 +42,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 const title = ref('')
 const description = ref('')
+const activityType = ref<string>(ACTIVITY_TYPE.PERSONAL)
 const scheduleType = ref<string>(ACTIVITY_SCHEDULE_TYPE.DAILY)
 const targetCompletions = ref(1)
 const selectedDays = ref<Weekday[]>([...WEEKDAYS_ORDERED])
@@ -65,6 +72,7 @@ const isDaySelected = (day: Weekday) => {
 const resetForm = () => {
   title.value = ''
   description.value = ''
+  activityType.value = ACTIVITY_TYPE.PERSONAL
   scheduleType.value = ACTIVITY_SCHEDULE_TYPE.DAILY
   targetCompletions.value = 1
   selectedDays.value = [...WEEKDAYS_ORDERED]
@@ -83,7 +91,7 @@ const handleSave = () => {
       : { type: ACTIVITY_SCHEDULE_TYPE.DAILY, targetCompletions: targetCompletions.value }
 
   createActivity({
-    type: ACTIVITY_TYPE.PERSONAL,
+    type: activityType.value as 'personal' | 'group',
     title: title.value.trim(),
     description: description.value.trim() || null,
     schedule,
@@ -182,6 +190,27 @@ const handleSave = () => {
             </div>
           </div>
         </div>
+
+        <BaseSegmentedControl v-model="activityType" class="w-full">
+          <BaseSegmentedControlButton :value="ACTIVITY_TYPE.PERSONAL" class="flex-1">
+            <IconPerson />
+            Personal
+          </BaseSegmentedControlButton>
+          <BaseSegmentedControlButton :value="ACTIVITY_TYPE.GROUP" class="flex-1">
+            <IconGroup />
+            Group
+          </BaseSegmentedControlButton>
+        </BaseSegmentedControl>
+
+        <Transition name="group-hint">
+          <div v-if="activityType === ACTIVITY_TYPE.GROUP" class="overflow-hidden">
+            <p class="bg-primary/10 rounded-xl px-3 py-2.5 text-xs leading-relaxed text-primary/80">
+              After creation you'll get a
+              <span class="font-semibold text-primary">shareable link</span>
+              others can use to join this activity.
+            </p>
+          </div>
+        </Transition>
       </div>
 
       <BaseDialogFooter>
@@ -222,5 +251,25 @@ const handleSave = () => {
   opacity: 0;
   max-height: 0;
   transform: translateY(-8px);
+}
+
+.group-hint-enter-active {
+  transition: all 0.3s ease;
+}
+
+.group-hint-leave-active {
+  transition: all 0.2s ease;
+}
+
+.group-hint-enter-from,
+.group-hint-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.group-hint-enter-to,
+.group-hint-leave-from {
+  opacity: 1;
+  max-height: 80px;
 }
 </style>

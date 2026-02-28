@@ -10,6 +10,12 @@ import {
 
 const MOCK_USER_ID = 'mock-user-id'
 
+const MOCK_USERS: Record<string, string> = {
+  'mock-user-id': 'You',
+  'mock-user-alice': 'Alice Chen',
+  'mock-user-bob': 'Bob Smith',
+}
+
 const ACTIVITIES_KEY = 'mock:activities'
 const COMPLETIONS_KEY = 'mock:completions'
 const ACTIVITY_MEMBERS_KEY = 'mock:activity-members'
@@ -312,7 +318,10 @@ const routes: Route[] = [
         })
       }
 
-      const data = all.slice(offset, offset + limit)
+      const data = all.slice(offset, offset + limit).map((c) => ({
+        ...c,
+        displayName: MOCK_USERS[c.userId] ?? 'Unknown',
+      }))
       return json({ data, total: all.length })
     },
   },
@@ -364,7 +373,10 @@ const routes: Route[] = [
       const all = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY).filter(
         (m) => m.activityId === match[1],
       )
-      const data = all.slice(offset, offset + limit)
+      const data = all.slice(offset, offset + limit).map((m) => ({
+        ...m,
+        displayName: MOCK_USERS[m.userId] ?? 'Unknown',
+      }))
       return json({ data, total: all.length })
     },
   },
@@ -465,7 +477,7 @@ const routes: Route[] = [
 // --- Seed data ---
 
 const MOCK_KEYS = [ACTIVITIES_KEY, COMPLETIONS_KEY, ACTIVITY_MEMBERS_KEY]
-const SEED_KEY = 'mock:seeded_v3'
+const SEED_KEY = 'mock:seeded_v5'
 
 function daysAgo(n: number): string {
   const d = new Date()
@@ -488,6 +500,7 @@ function generateCompletions(
   targetPerDay: number,
   scheduledDays: number[] | null,
   hitRate: number,
+  userId: string = MOCK_USER_ID,
 ): Completion[] {
   const completions: Completion[] = []
   const start = new Date(createdAtStr)
@@ -513,7 +526,7 @@ function generateCompletions(
       completions.push({
         id: crypto.randomUUID(),
         activityId,
-        userId: MOCK_USER_ID,
+        userId,
         completedAt: completedAt.toISOString(),
         note: null,
         createdAt: now,
@@ -611,19 +624,57 @@ function seedMockData(): void {
     ...generateCompletions(1, 'seed-act-2', act2!.createdAt, today, 2, null, 0.68),
     ...generateCompletions(2, 'seed-act-3', act3!.createdAt, today, 1, [1, 3, 5], 0.8),
     ...generateCompletions(3, 'seed-act-4', act4!.createdAt, today, 1, [2, 4, 6], 0.65),
+    ...generateCompletions(
+      6,
+      'seed-act-4',
+      act4!.createdAt,
+      today,
+      1,
+      [2, 4, 6],
+      0.8,
+      'mock-user-alice',
+    ),
+    ...generateCompletions(
+      7,
+      'seed-act-4',
+      act4!.createdAt,
+      today,
+      1,
+      [2, 4, 6],
+      0.55,
+      'mock-user-bob',
+    ),
     // Archived: completions only up to archivedAt
     ...generateCompletions(4, 'seed-act-5', act5!.createdAt, act5!.archivedAt!, 1, null, 0.77),
     ...generateCompletions(5, 'seed-act-6', act6!.createdAt, act6!.archivedAt!, 1, [2, 4], 0.72),
   ]
 
-  const members: ActivityMember[] = activities.map((a) => ({
-    id: crypto.randomUUID(),
-    activityId: a.id,
-    userId: MOCK_USER_ID,
-    role: 'owner' as const,
-    createdAt: a.createdAt,
-    updatedAt: a.updatedAt,
-  }))
+  const members: ActivityMember[] = [
+    ...activities.map((a) => ({
+      id: crypto.randomUUID(),
+      activityId: a.id,
+      userId: MOCK_USER_ID,
+      role: 'owner' as const,
+      createdAt: a.createdAt,
+      updatedAt: a.updatedAt,
+    })),
+    {
+      id: crypto.randomUUID(),
+      activityId: 'seed-act-4',
+      userId: 'mock-user-alice',
+      role: 'member' as const,
+      createdAt: act4!.createdAt,
+      updatedAt: act4!.createdAt,
+    },
+    {
+      id: crypto.randomUUID(),
+      activityId: 'seed-act-4',
+      userId: 'mock-user-bob',
+      role: 'member' as const,
+      createdAt: act4!.createdAt,
+      updatedAt: act4!.createdAt,
+    },
+  ]
 
   setItems(ACTIVITIES_KEY, activities)
   setItems(COMPLETIONS_KEY, completions)

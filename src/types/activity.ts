@@ -1,9 +1,9 @@
 import { type ActivitySchedule } from './activitySchedule'
 import { type ActivityType } from './activityType'
-import type { Completion } from './completion'
+import type { CompletionWithUser } from './completion'
 
 export interface EnrichedActivity extends Activity {
-  completionsByDate: Record<string, Completion[]>
+  completionsByDate: Record<string, CompletionWithUser[]>
 }
 
 export interface Activity {
