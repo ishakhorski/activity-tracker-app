@@ -33,16 +33,12 @@ function scheduleLabel(activity: (typeof archivedActivities.value)[number]): str
 
 <template>
   <PageHeader>
-    <BaseButton
-      :as="RouterLink"
-      :to="{ name: 'settings-view' }"
-      variant="secondary"
-      size="small"
-      class="w-fit"
-    >
-      <IconArrowRight class="rotate-180 size-3.5" aria-hidden="true" />
-      Settings
-    </BaseButton>
+    <RouterLink v-slot="{ navigate }" :to="{ name: 'settings-view' }" custom>
+      <BaseButton as="a" variant="secondary" size="small" class="w-fit" @click="navigate">
+        <IconArrowRight class="rotate-180 size-3.5" aria-hidden="true" />
+        Settings
+      </BaseButton>
+    </RouterLink>
     <h1 class="font-bold text-xl text-center">Archive</h1>
   </PageHeader>
 
