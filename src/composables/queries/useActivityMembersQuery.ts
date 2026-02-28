@@ -1,12 +1,16 @@
-import { computed, type Ref } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 
 import { getActivityMembers } from '@/services/activityMembersService'
 
-const ACTIVITY_MEMBERS_QUERY_KEY = (id: string) => ['activity-members', id] as const
+const ACTIVITY_MEMBERS_QUERY_KEY = 'activity-members' as const
 
-export const useActivityMembersQuery = (activityId: Ref<string>) =>
-  useQuery({
-    queryKey: computed(() => ACTIVITY_MEMBERS_QUERY_KEY(activityId.value)),
-    queryFn: () => getActivityMembers(activityId.value).then((r) => r.data),
+export const useActivityMembersQuery = (activityId: MaybeRefOrGetter<string>) => {
+  return useQuery({
+    queryKey: computed(() => [ACTIVITY_MEMBERS_QUERY_KEY, toValue(activityId)]),
+    queryFn: async () => {
+      const response = await getActivityMembers(toValue(activityId))
+      return response.data
+    },
   })
+}

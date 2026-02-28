@@ -1,20 +1,20 @@
 import type { Completion } from '@/types/completion'
 
-export function getDateRange(days = 7) {
-  const now = new Date()
-  const from = new Date(now)
+export const getDateRange = (days = 7): { from: string; to: string } => {
+  const to = new Date()
+  to.setHours(23, 59, 59, 999)
+  const from = new Date(to)
   from.setDate(from.getDate() - days)
-  return { from: from.toISOString(), to: now.toISOString() }
+  from.setHours(0, 0, 0, 0)
+  return { from: from.toISOString(), to: to.toISOString() }
 }
 
-export function getCompletionsByActivity(
+export const getCompletionsByActivity = (
   completions: Completion[],
   activityId: string,
-): Completion[] {
-  return completions.filter((c) => c.activityId === activityId)
-}
+): Completion[] => completions.filter((c) => c.activityId === activityId)
 
-export function getTodayCompletionCount(completions: Completion[], activityId: string): number {
+export const getTodayCompletionCount = (completions: Completion[], activityId: string): number => {
   const now = new Date()
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const dayEnd = new Date(dayStart)

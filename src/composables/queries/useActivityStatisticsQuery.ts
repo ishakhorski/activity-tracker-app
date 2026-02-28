@@ -1,32 +1,29 @@
-import { computed, type Ref } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 
 import { getActivityStatistics } from '@/services/statisticsService'
-import { STATISTICS_QUERY_KEY } from '@/composables/queries/useStatisticsQuery'
 import type { Statistic, StatisticType } from '@/types/statistics'
 
-const STALE_TIME = 5 * 60 * 1000
+export const ACTIVITY_STATISTICS_QUERY_KEY = 'activity-statistics' as const
 
 export const useActivityStatisticsQuery = <T extends Statistic = Statistic>(
-  activityId: Ref<string>,
-  type: Ref<StatisticType>,
-  from: Ref<string>,
-  to: Ref<string>,
+  activityId: MaybeRefOrGetter<string>,
+  statisticType: MaybeRefOrGetter<StatisticType>,
+  dateFrom: MaybeRefOrGetter<string>,
+  dateTo: MaybeRefOrGetter<string>,
 ) => {
   return useQuery({
     queryKey: computed(() => [
-      ...STATISTICS_QUERY_KEY,
-      'activity',
-      activityId.value,
-      type.value,
-      from.value,
-      to.value,
+      ACTIVITY_STATISTICS_QUERY_KEY,
+      toValue(activityId),
+      toValue(statisticType),
+      toValue(dateFrom),
+      toValue(dateTo),
     ]),
     queryFn: () =>
-      getActivityStatistics<T>(activityId.value, type.value, {
-        dateFrom: from.value,
-        dateTo: to.value,
+      getActivityStatistics<T>(toValue(activityId), toValue(statisticType), {
+        dateFrom: toValue(dateFrom),
+        dateTo: toValue(dateTo),
       }),
-    staleTime: STALE_TIME,
   })
 }

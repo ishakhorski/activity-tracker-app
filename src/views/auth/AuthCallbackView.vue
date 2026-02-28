@@ -2,21 +2,22 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useAuth0 } from '@/plugins/auth0Plugin'
-
 import AppLogo from '@/components/molecules/AppLogo.vue'
+
+import { useAuth0 } from '@/plugins/auth0Plugin'
 
 const route = useRoute()
 const router = useRouter()
 const { handleRedirectCallback } = useAuth0()
 
-onMounted(async () => {
-  const error = route.query.error as string | undefined
+const errorQuery = route.query.error as string | undefined
+const errorDescriptionQuery = route.query.error_description as string | undefined
 
-  if (error) {
+onMounted(async () => {
+  if (errorQuery) {
     router.replace({
       name: 'login',
-      query: { error, error_description: route.query.error_description },
+      query: { error: errorQuery, error_description: errorDescriptionQuery },
     })
     return
   }

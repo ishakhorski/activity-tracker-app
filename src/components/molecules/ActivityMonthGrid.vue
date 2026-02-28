@@ -8,7 +8,8 @@ import { useDaysGrid } from '@/composables/useDaysGrid'
 import { DAY_STATUS_BRICK_VARIANT, getDayStatus, getTargetForDay } from '@/utils/activities'
 import type { DayStatus } from '@/utils/activities'
 
-import type { ActivitySchedule, Weekday } from '@/types/activitySchedule'
+import type { ActivitySchedule } from '@/types/activitySchedule'
+import type { Weekday } from '@/types/weekday'
 import type { Completion } from '@/types/completion'
 
 const props = defineProps<{

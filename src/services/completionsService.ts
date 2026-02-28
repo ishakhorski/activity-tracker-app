@@ -1,17 +1,16 @@
 import { http } from './http'
 
-import type { CompletionWithUser, CreateCompletion } from '@/types/completion'
+import type { EnrichedCompletion, CreateCompletion } from '@/types/completion'
 
 export const getCompletionsByDateRange = (
-  from: string,
-  to: string,
-): Promise<{ data: CompletionWithUser[]; total: number }> => {
+  dateFrom: string,
+  dateTo: string,
+): Promise<{ data: EnrichedCompletion[]; total: number }> => {
   const params: Record<string, string> = {
-    from,
-    to,
-    limit: '1000',
+    from: dateFrom,
+    to: dateTo,
   }
-  return http.get<{ data: CompletionWithUser[]; total: number }>('/completions', { params })
+  return http.get<{ data: EnrichedCompletion[]; total: number }>('/completions', { params })
 }
 
 export const createCompletion = (data: CreateCompletion): Promise<string> => {

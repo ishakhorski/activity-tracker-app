@@ -30,10 +30,10 @@ import IconArchive from '@/assets/icons/archive.svg?component'
 import IconCalendar from '@/assets/icons/calendar.svg?component'
 import IconGroup from '@/assets/icons/group.svg?component'
 import GroupActivityCalendar from '@/components/organisms/GroupActivityCalendar.vue'
-import GroupActivityDayDialog from '@/components/organisms/GroupActivityDayDialog.vue'
-import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
+import GroupActivityCompletionsDialog from '@/components/organisms/GroupActivityCompletionsDialog.vue'
+import CompletionCreateDialog from '@/components/organisms/CompletionCreateDialog.vue'
 import ActivityError from '@/components/molecules/ActivityError.vue'
-import ShareActivityDialog from '@/components/organisms/ShareActivityDialog.vue'
+import ActivityShareDialog from '@/components/organisms/ActivityShareDialog.vue'
 
 import { useActivityQuery } from '@/composables/queries/useActivityQuery'
 import { useCompletionsQuery } from '@/composables/queries/useCompletionsQuery'
@@ -56,8 +56,8 @@ const backLabel = computed(() => (fromArchive.value ? 'Archive' : 'Activities'))
 const activeTab = useRouteQuery<'overview' | 'members'>('tab', 'overview')
 
 const { data: activity, isLoading, isError } = useActivityQuery(id)
-const { updateActivity } = useActivityUpdateMutation()
-const { deleteActivity, isPending: isDeleting } = useActivityDeleteMutation()
+const { mutate: updateActivity } = useActivityUpdateMutation()
+const { mutate: deleteActivity, isPending: isDeleting } = useActivityDeleteMutation()
 
 const today = new Date()
 const currentFrom = toLocalDateKey(new Date(today.getFullYear(), today.getMonth(), 1))
@@ -174,8 +174,9 @@ const openDayDialog = async (date: string) => {
 const handleComplete = () => complete(id.value, () => trackBtn.value?.play())
 const handleCompleteLongPress = () => completeWithNote(id.value, () => trackBtn.value?.play())
 
-const handleArchive = () => updateActivity(id.value, { archivedAt: new Date().toISOString() })
-const handleUnarchive = () => updateActivity(id.value, { archivedAt: null })
+const handleArchive = () =>
+  updateActivity({ id: id.value, data: { archivedAt: new Date().toISOString() } })
+const handleUnarchive = () => updateActivity({ id: id.value, data: { archivedAt: null } })
 
 const deleteDialogOpen = ref(false)
 const shareDialogOpen = ref(false)
@@ -254,7 +255,7 @@ const handleDelete = async () => {
       </div>
 
       <div v-else-if="activeTab === 'members'">
-        <ActivityMembersList :activity-id="id" @invite="shareDialogOpen = true" />
+        <ActivityMembersList :activity-id="id" />
       </div>
 
       <div class="flex flex-col gap-2 mt-4">
@@ -274,73 +275,81 @@ const handleDelete = async () => {
               </ActivityTrackButton>
             </div>
           </Transition>
-        </template>
 
-        <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-1.5">
+            <BaseButton
+              variant="secondary"
+              class="w-full overflow-hidden"
+              :disabled="isLoading"
+              @click="activity?.archivedAt ? handleUnarchive() : handleArchive()"
+            >
+              <Transition name="label-swap" mode="out-in">
+                <span :key="activity?.archivedAt ? 'unarchive' : 'archive'">
+                  {{ activity?.archivedAt ? 'Unarchive' : 'Archive' }}
+                </span>
+              </Transition>
+            </BaseButton>
+            <p class="text-xs text-muted-foreground/50 text-center leading-snug px-2">
+              Hidden from main list. Find it in
+              <RouterLink
+                :to="{ name: 'archived-view' }"
+                class="underline underline-offset-2 hover:text-muted-foreground"
+                >Archive</RouterLink
+              >.
+            </p>
+          </div>
+
           <BaseButton
             variant="secondary"
-            class="w-full overflow-hidden"
-            :disabled="isLoading"
-            @click="activity?.archivedAt ? handleUnarchive() : handleArchive()"
+            class="w-full mt-6 text-destructive hover:bg-destructive/10 active:bg-destructive/15"
+            :disabled="isLoading || isDeleting"
+            @click="deleteDialogOpen = true"
           >
-            <Transition name="label-swap" mode="out-in">
-              <span :key="activity?.archivedAt ? 'unarchive' : 'archive'">
-                {{ activity?.archivedAt ? 'Unarchive' : 'Archive' }}
-              </span>
-            </Transition>
+            Delete
           </BaseButton>
-          <p class="text-xs text-muted-foreground/50 text-center leading-snug px-2">
-            Hidden from main list. Find it in
-            <RouterLink
-              :to="{ name: 'archived-view' }"
-              class="underline underline-offset-2 hover:text-muted-foreground"
-              >Archive</RouterLink
-            >.
-          </p>
-        </div>
 
-        <BaseButton
-          variant="secondary"
-          class="w-full mt-6 text-destructive hover:bg-destructive/10 active:bg-destructive/15"
-          :disabled="isLoading || isDeleting"
-          @click="deleteDialogOpen = true"
-        >
-          Delete
-        </BaseButton>
+          <BaseDialog v-model:open="deleteDialogOpen">
+            <BaseDialogContent>
+              <BaseDialogHeader>
+                <BaseDialogTitle>Delete activity?</BaseDialogTitle>
+                <BaseDialogDescription>
+                  This will permanently delete "{{ activity?.title }}" and all its completion
+                  history. This cannot be undone.
+                </BaseDialogDescription>
+              </BaseDialogHeader>
+              <BaseDialogFooter>
+                <BaseButton variant="secondary" @click="deleteDialogOpen = false"
+                  >Cancel</BaseButton
+                >
+                <BaseButton
+                  variant="secondary"
+                  class="text-destructive hover:bg-destructive/10 active:bg-destructive/15"
+                  :disabled="isDeleting"
+                  @click="handleDelete"
+                >
+                  Delete
+                </BaseButton>
+              </BaseDialogFooter>
+            </BaseDialogContent>
+          </BaseDialog>
+        </template>
 
-        <BaseDialog v-model:open="deleteDialogOpen">
-          <BaseDialogContent>
-            <BaseDialogHeader>
-              <BaseDialogTitle>Delete activity?</BaseDialogTitle>
-              <BaseDialogDescription>
-                This will permanently delete "{{ activity?.title }}" and all its completion history.
-                This cannot be undone.
-              </BaseDialogDescription>
-            </BaseDialogHeader>
-            <BaseDialogFooter>
-              <BaseButton variant="secondary" @click="deleteDialogOpen = false">Cancel</BaseButton>
-              <BaseButton
-                variant="secondary"
-                class="text-destructive hover:bg-destructive/10 active:bg-destructive/15"
-                :disabled="isDeleting"
-                @click="handleDelete"
-              >
-                Delete
-              </BaseButton>
-            </BaseDialogFooter>
-          </BaseDialogContent>
-        </BaseDialog>
+        <template v-else-if="activeTab === 'members'">
+          <BaseButton variant="secondary" class="w-full" @click="shareDialogOpen = true">
+            Invite Members
+          </BaseButton>
+        </template>
       </div>
     </template>
   </PageContent>
 
-  <CreateCompletionDialog
+  <CompletionCreateDialog
     v-model:open="isCompletionDialog"
     :cancel="cancelCompletionDialog"
     :confirm="confirmCompletionDialog"
   />
 
-  <GroupActivityDayDialog
+  <GroupActivityCompletionsDialog
     v-model:open="isDayDialogOpen"
     :date="dayDialogDate"
     :completions="dayDialogCompletions"
@@ -349,7 +358,7 @@ const handleDelete = async () => {
     :cancel="cancelDayDialog"
   />
 
-  <ShareActivityDialog
+  <ActivityShareDialog
     v-model:open="shareDialogOpen"
     :activity-id="id"
     :activity-title="activity?.title ?? ''"

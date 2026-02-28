@@ -5,13 +5,11 @@ import ActivityCardSkeleton from '@/components/molecules/ActivityCardSkeleton.vu
 import ActivitiesOnboarding from '@/components/molecules/ActivitiesOnboarding.vue'
 import ActivitiesError from '@/components/molecules/ActivitiesError.vue'
 import ActivityCard from '@/components/organisms/ActivityCard.vue'
-import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
+import CompletionCreateDialog from '@/components/organisms/CompletionCreateDialog.vue'
 
 import { useEnrichedActivities } from '@/composables/useEnrichedActivities'
-import { useCreateActivityDialog } from '@/composables/useCreateActivityDialog'
 import { useTrackCompletion } from '@/composables/useTrackCompletion'
 
-const { openCreateActivityDialog } = useCreateActivityDialog()
 const {
   isCompletionDialog,
   confirmCompletionDialog,
@@ -20,7 +18,12 @@ const {
   completeWithNote,
 } = useTrackCompletion()
 
-const { enrichedActivities, isLoading, isError, handleRetry } = useEnrichedActivities()
+const {
+  enrichedActivities,
+  isEnrichedActivitiesLoading,
+  isEnrichedActivitiesError,
+  retryEnrichedActivities,
+} = useEnrichedActivities()
 
 const cardRefs = new Map<string, { play: () => void }>()
 
@@ -37,16 +40,13 @@ const handleAddCompletionWithNote = (activityId: string) =>
   </PageHeader>
 
   <PageContent>
-    <div v-if="isLoading" class="flex flex-col gap-3">
+    <div v-if="isEnrichedActivitiesLoading" class="flex flex-col gap-3">
       <ActivityCardSkeleton v-for="i in 4" :key="i" />
     </div>
 
-    <ActivitiesError v-else-if="isError" @retry="handleRetry" />
+    <ActivitiesError v-else-if="isEnrichedActivitiesError" @retry="retryEnrichedActivities" />
 
-    <ActivitiesOnboarding
-      v-else-if="enrichedActivities.length === 0"
-      @create="openCreateActivityDialog"
-    />
+    <ActivitiesOnboarding v-else-if="enrichedActivities.length === 0" />
 
     <TransitionGroup v-else tag="div" name="activity-list" class="relative flex flex-col gap-3">
       <ActivityCard
@@ -65,7 +65,7 @@ const handleAddCompletionWithNote = (activityId: string) =>
     </TransitionGroup>
   </PageContent>
 
-  <CreateCompletionDialog
+  <CompletionCreateDialog
     v-model:open="isCompletionDialog"
     :cancel="cancelCompletionDialog"
     :confirm="confirmCompletionDialog"

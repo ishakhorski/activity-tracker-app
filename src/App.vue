@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { type Component, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, type Component } from 'vue'
 import { useRoute } from 'vue-router'
+
+import { LAYOUT, type Layout } from '@/types/layout'
 
 const route = useRoute()
 
-const layouts: Record<string, Component> = {
-  auth: defineAsyncComponent(() => import('@/layouts/AuthLayout.vue')),
-  empty: defineAsyncComponent(() => import('@/layouts/EmptyLayout.vue')),
-  main: defineAsyncComponent(() => import('@/layouts/MainLayout.vue')),
-  secondary: defineAsyncComponent(() => import('@/layouts/SecondaryLayout.vue')),
+const layout = computed<Layout>(() => {
+  return route.meta.layout ?? LAYOUT.EMPTY
+})
+
+const layouts: Record<Layout, Component> = {
+  [LAYOUT.MAIN]: defineAsyncComponent(() => import('@/layouts/MainLayout.vue')),
+  [LAYOUT.SECONDARY]: defineAsyncComponent(() => import('@/layouts/SecondaryLayout.vue')),
+  [LAYOUT.AUTH]: defineAsyncComponent(() => import('@/layouts/AuthLayout.vue')),
+  [LAYOUT.EMPTY]: defineAsyncComponent(() => import('@/layouts/EmptyLayout.vue')),
 }
 </script>
 
 <template>
-  <component :is="layouts[route.meta.layout as string] ?? layouts.default">
+  <component :is="layouts[layout]">
     <RouterView />
   </component>
 </template>

@@ -44,7 +44,7 @@ defineExpose({ play: () => trackBtn.value?.play() })
     :to="{ name: 'activity-details', params: { id: activity.id, type: activity.type } }"
   >
     <div
-      class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3"
+      class="relative w-full glass rounded-2xl px-3 py-4 flex items-center gap-3 touch-manipulation"
       @click="navigate"
     >
       <div class="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouteQuery } from '@vueuse/router'
+import { format, subDays } from 'date-fns'
 
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
@@ -16,11 +17,13 @@ import {
   BaseSegmentedControl,
   BaseSegmentedControlButton,
 } from '@/components/atoms/segmented-control'
-import { format, subDays } from 'date-fns'
 
 import { useStatisticsQuery } from '@/composables/queries/useStatisticsQuery'
-import { STATISTIC_TYPE } from '@/types/statistics'
-import type { CompletionRateStatistic, ThroughputStatistic } from '@/types/statistics'
+import {
+  STATISTIC_TYPE,
+  type CompletionRateStatistic,
+  type ThroughputStatistic,
+} from '@/types/statistics'
 
 const RANGE_OPTIONS = [
   { label: '30 days', value: '30' },
@@ -28,24 +31,30 @@ const RANGE_OPTIONS = [
   { label: '1 year', value: '365' },
 ]
 
-const selectedRange = useRouteQuery('range', '30')
+const range = useRouteQuery('range', '30')
 
-const from = computed(() =>
-  format(subDays(new Date(), parseInt(selectedRange.value)), 'yyyy-MM-dd'),
-)
-const to = computed(() => format(new Date(), 'yyyy-MM-dd'))
+const dateFrom = computed(() => format(subDays(new Date(), parseInt(range.value)), 'yyyy-MM-dd'))
+const dateTo = computed(() => format(new Date(), 'yyyy-MM-dd'))
 
-const crType = ref(STATISTIC_TYPE.COMPLETION_RATE)
-const tpType = ref(STATISTIC_TYPE.THROUGHPUT)
+const {
+  data: crData,
+  isLoading: crIsLoading,
+  isError: crIsError,
+  refetch: crRefetch,
+} = useStatisticsQuery<CompletionRateStatistic>(STATISTIC_TYPE.COMPLETION_RATE, dateFrom, dateTo)
 
-const crQuery = useStatisticsQuery<CompletionRateStatistic>(crType, from, to)
-const tpQuery = useStatisticsQuery<ThroughputStatistic>(tpType, from, to)
+const {
+  data: tpData,
+  isLoading: tpIsLoading,
+  isError: tpIsError,
+  refetch: tpRefetch,
+} = useStatisticsQuery<ThroughputStatistic>(STATISTIC_TYPE.THROUGHPUT, dateFrom, dateTo)
 </script>
 
 <template>
   <PageHeader>
     <h1 class="font-bold text-2xl">Statistics</h1>
-    <BaseSegmentedControl v-model="selectedRange">
+    <BaseSegmentedControl v-model="range">
       <BaseSegmentedControlButton v-for="opt in RANGE_OPTIONS" :key="opt.value" :value="opt.value">
         {{ opt.label }}
       </BaseSegmentedControlButton>
@@ -54,33 +63,33 @@ const tpQuery = useStatisticsQuery<ThroughputStatistic>(tpType, from, to)
 
   <PageContent>
     <div class="grid gap-3">
-      <template v-if="crQuery.isLoading.value">
+      <template v-if="crIsLoading">
         <CompletionRateSummarySkeleton />
         <ChartCardSkeleton />
       </template>
-      <template v-else-if="crQuery.isError.value">
-        <StatisticsError @retry="() => crQuery.refetch()" />
+      <template v-else-if="crIsError">
+        <StatisticsError @retry="crRefetch" />
       </template>
-      <template v-else-if="crQuery.data.value">
-        <CompletionRateSummary :summary="crQuery.data.value.summary" />
+      <template v-else-if="crData">
+        <CompletionRateSummary :summary="crData.summary" />
         <div class="glass rounded-2xl px-4 pt-3 pb-4">
           <p class="text-sm font-medium mb-4">Completion rate over time</p>
-          <CompletionRateChart :data="crQuery.data.value.data" />
+          <CompletionRateChart :data="crData.data" />
         </div>
       </template>
 
-      <template v-if="tpQuery.isLoading.value">
+      <template v-if="tpIsLoading">
         <ThroughputSummarySkeleton />
         <ChartCardSkeleton />
       </template>
-      <template v-else-if="tpQuery.isError.value">
-        <StatisticsError @retry="() => tpQuery.refetch()" />
+      <template v-else-if="tpIsError">
+        <StatisticsError @retry="tpRefetch" />
       </template>
-      <template v-else-if="tpQuery.data.value">
-        <ThroughputSummary :summary="tpQuery.data.value.summary" />
+      <template v-else-if="tpData">
+        <ThroughputSummary :summary="tpData.summary" />
         <div class="glass rounded-2xl px-4 pt-3 pb-4">
           <p class="text-sm font-medium mb-4">Completions over time</p>
-          <ThroughputChart :data="tpQuery.data.value.data" />
+          <ThroughputChart :data="tpData.data" />
         </div>
       </template>
     </div>

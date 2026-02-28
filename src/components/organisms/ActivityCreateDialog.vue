@@ -26,17 +26,15 @@ import IconBoltFill from '@/assets/icons/bolt-fill.svg?component'
 import IconPerson from '@/assets/icons/person.svg?component'
 import IconGroup from '@/assets/icons/group.svg?component'
 
-import {
-  ACTIVITY_SCHEDULE_TYPE,
-  WEEKDAYS_ORDERED,
-  WEEKDAY_LABELS,
-  type Weekday,
-  type ActivitySchedule,
-} from '@/types/activitySchedule'
-import { useActivityCreateMutation } from '@/composables/mutations/useActivityCreateMutation'
+import { ACTIVITY_SCHEDULE_TYPE, type ActivitySchedule } from '@/types/activitySchedule'
+import { WEEKDAYS_ORDERED, WEEKDAY_LABELS, type Weekday } from '@/types/weekday'
 import { ACTIVITY_TYPE } from '@/types/activityType'
+import type { CreateActivity } from '@/types/activity'
 
-const { createActivity } = useActivityCreateMutation()
+const props = defineProps<{
+  confirm: (data: CreateActivity) => void
+  cancel: () => void
+}>()
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -78,7 +76,7 @@ const resetForm = () => {
   selectedDays.value = [...WEEKDAYS_ORDERED]
 }
 
-const handleSave = () => {
+const handleConfirm = () => {
   if (!title.value.trim()) return
 
   const schedule: ActivitySchedule =
@@ -90,7 +88,7 @@ const handleSave = () => {
         }
       : { type: ACTIVITY_SCHEDULE_TYPE.DAILY, targetCompletions: targetCompletions.value }
 
-  createActivity({
+  props.confirm({
     type: activityType.value as 'personal' | 'group',
     title: title.value.trim(),
     description: description.value.trim() || null,
@@ -99,10 +97,20 @@ const handleSave = () => {
   resetForm()
   open.value = false
 }
+
+const handleCancel = () => {
+  props.cancel()
+  resetForm()
+  open.value = false
+}
+
+const handleUpdate = (newOpen: boolean) => {
+  if (!newOpen) handleCancel()
+}
 </script>
 
 <template>
-  <BaseDialog v-model:open="open">
+  <BaseDialog :open="open" @update:open="handleUpdate">
     <BaseDialogContent>
       <BaseDialogHeader>
         <BaseDialogTitle>Add Activity</BaseDialogTitle>
@@ -214,7 +222,8 @@ const handleSave = () => {
       </div>
 
       <BaseDialogFooter>
-        <BaseButton :disabled="!title.trim()" @click="handleSave">Save</BaseButton>
+        <BaseButton variant="secondary" type="button" @click="handleCancel">Cancel</BaseButton>
+        <BaseButton :disabled="!title.trim()" @click="handleConfirm">Save</BaseButton>
       </BaseDialogFooter>
     </BaseDialogContent>
   </BaseDialog>

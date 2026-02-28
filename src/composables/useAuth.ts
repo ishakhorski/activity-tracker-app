@@ -4,38 +4,28 @@ import { useAuth0 } from '@/plugins/auth0Plugin'
 import { type AuthConnector } from '@/types/auth'
 
 export const useAuth = () => {
-  const { isAuthenticated, user } = useAuth0()
-  return { isAuthenticated, user }
-}
+  const { isAuthenticated, user, loginWithRedirect, logout: auth0Logout } = useAuth0()
 
-export const useLoginMutation = () => {
-  const { loginWithRedirect } = useAuth0()
-  const isPending = ref(false)
+  const isLoginPending = ref(false)
+  const isLogoutPending = ref(false)
 
-  async function login(connection: AuthConnector) {
-    isPending.value = true
+  const login = async (connection: AuthConnector) => {
+    isLoginPending.value = true
     try {
       await loginWithRedirect({ authorizationParams: { connection } })
     } catch {
-      isPending.value = false
+      isLoginPending.value = false
     }
   }
 
-  return { login, isPending }
-}
-
-export const useLogoutMutation = () => {
-  const { logout } = useAuth0()
-  const isPending = ref(false)
-
-  async function signOut() {
-    isPending.value = true
+  const logout = async () => {
+    isLogoutPending.value = true
     try {
-      await logout({ logoutParams: { returnTo: window.location.origin } })
+      await auth0Logout({ logoutParams: { returnTo: window.location.origin } })
     } catch {
-      isPending.value = false
+      isLogoutPending.value = false
     }
   }
 
-  return { signOut, isPending }
+  return { isAuthenticated, user, login, isLoginPending, logout, isLogoutPending }
 }

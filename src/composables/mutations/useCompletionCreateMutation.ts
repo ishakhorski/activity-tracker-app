@@ -9,10 +9,10 @@ export const useCompletionCreateMutation = () => {
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
-  const { mutate } = useMutation({
+  return useMutation({
     mutationFn: (data: CreateCompletion) => createCompletion(data),
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      await queryClient.cancelQueries({ queryKey: [COMPLETIONS_QUERY_KEY] })
 
       const now = new Date().toISOString()
       const tempId = `temp-${crypto.randomUUID()}`
@@ -26,26 +26,22 @@ export const useCompletionCreateMutation = () => {
         updatedAt: now,
       }
 
-      queryClient.setQueriesData<Completion[]>({ queryKey: COMPLETIONS_QUERY_KEY }, (old) =>
+      queryClient.setQueriesData<Completion[]>({ queryKey: [COMPLETIONS_QUERY_KEY] }, (old) =>
         old ? [...old, optimistic] : [optimistic],
       )
 
       return { tempId }
     },
     onSuccess: (id, _vars, context) => {
-      queryClient.setQueriesData<Completion[]>({ queryKey: COMPLETIONS_QUERY_KEY }, (old) =>
+      queryClient.setQueriesData<Completion[]>({ queryKey: [COMPLETIONS_QUERY_KEY] }, (old) =>
         (old ?? []).map((c) => (c.id === context.tempId ? { ...c, id } : c)),
       )
     },
     onError: () => {
-      queryClient.invalidateQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: [COMPLETIONS_QUERY_KEY] })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: COMPLETIONS_QUERY_KEY })
+      queryClient.invalidateQueries({ queryKey: [COMPLETIONS_QUERY_KEY] })
     },
   })
-
-  return {
-    addCompletion: (data: CreateCompletion) => mutate({ ...data }),
-  }
 }

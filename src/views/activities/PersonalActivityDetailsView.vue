@@ -22,8 +22,8 @@ import {
 import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 import IconArchive from '@/assets/icons/archive.svg?component'
 import ActivityCalendar from '@/components/organisms/ActivityCalendar.vue'
-import ActivityDayDialog from '@/components/organisms/ActivityDayDialog.vue'
-import CreateCompletionDialog from '@/components/organisms/CreateCompletionDialog.vue'
+import ActivityCompletionsDialog from '@/components/organisms/ActivityCompletionsDialog.vue'
+import CompletionCreateDialog from '@/components/organisms/CompletionCreateDialog.vue'
 import ActivityError from '@/components/molecules/ActivityError.vue'
 
 import { useActivityQuery } from '@/composables/queries/useActivityQuery'
@@ -45,8 +45,8 @@ const backRoute = computed(() =>
 const backLabel = computed(() => (fromArchive.value ? 'Archive' : 'Activities'))
 
 const { data: activity, isLoading, isError } = useActivityQuery(id)
-const { updateActivity } = useActivityUpdateMutation()
-const { deleteActivity, isPending: isDeleting } = useActivityDeleteMutation()
+const { mutate: updateActivity } = useActivityUpdateMutation()
+const { mutate: deleteActivity, isPending: isDeleting } = useActivityDeleteMutation()
 
 const today = new Date()
 const currentFrom = toLocalDateKey(new Date(today.getFullYear(), today.getMonth(), 1))
@@ -163,8 +163,9 @@ const openDayDialog = async (date: string) => {
 const handleComplete = () => complete(id.value, () => trackBtn.value?.play())
 const handleCompleteLongPress = () => completeWithNote(id.value, () => trackBtn.value?.play())
 
-const handleArchive = () => updateActivity(id.value, { archivedAt: new Date().toISOString() })
-const handleUnarchive = () => updateActivity(id.value, { archivedAt: null })
+const handleArchive = () =>
+  updateActivity({ id: id.value, data: { archivedAt: new Date().toISOString() } })
+const handleUnarchive = () => updateActivity({ id: id.value, data: { archivedAt: null } })
 
 const deleteDialogOpen = ref(false)
 
@@ -303,13 +304,13 @@ const handleDelete = async () => {
     </div>
   </PageContent>
 
-  <CreateCompletionDialog
+  <CompletionCreateDialog
     v-model:open="isCompletionDialog"
     :cancel="cancelCompletionDialog"
     :confirm="confirmCompletionDialog"
   />
 
-  <ActivityDayDialog
+  <ActivityCompletionsDialog
     v-model:open="isDayDialogOpen"
     :date="dayDialogDate"
     :completions="dayDialogCompletions"

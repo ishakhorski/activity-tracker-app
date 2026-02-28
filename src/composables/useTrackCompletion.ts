@@ -3,8 +3,8 @@ import { useConfirmDialog } from '@vueuse/core'
 import { useCompletionCreateMutation } from '@/composables/mutations/useCompletionCreateMutation'
 import type { CreateCompletion } from '@/types/completion'
 
-export function useTrackCompletion() {
-  const { addCompletion } = useCompletionCreateMutation()
+export const useTrackCompletion = () => {
+  const { mutate: addCompletion } = useCompletionCreateMutation()
 
   const {
     isRevealed: isCompletionDialog,

@@ -5,7 +5,7 @@ import { useCompletionsQuery } from '@/composables/queries/useCompletionsQuery'
 import { enrichActivity, getDayStatus, getTargetForDay, toLocalDateKey } from '@/utils/activities'
 import { getDateRange } from '@/utils/completions'
 
-export function useEnrichedActivities() {
+export const useEnrichedActivities = () => {
   const { from, to } = getDateRange()
 
   const {
@@ -46,10 +46,15 @@ export function useEnrichedActivities() {
       })
   })
 
-  const handleRetry = () => {
+  const retryEnrichedActivities = () => {
     refetchActivities()
     refetchCompletions()
   }
 
-  return { enrichedActivities, isLoading, isError, handleRetry }
+  return {
+    enrichedActivities,
+    isEnrichedActivitiesLoading: isLoading,
+    isEnrichedActivitiesError: isError,
+    retryEnrichedActivities,
+  }
 }

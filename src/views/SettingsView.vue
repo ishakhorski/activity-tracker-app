@@ -8,16 +8,16 @@ import {
   BaseSegmentedControlButton,
 } from '@/components/atoms/segmented-control'
 import { BaseButton } from '@/components/atoms/button'
-import { useLogoutMutation } from '@/composables/useAuth'
-import { useTheme } from '@/composables/useTheme'
-
 import IconSystem from '@/assets/icons/system.svg?component'
 import IconSunFill from '@/assets/icons/sun-fill.svg?component'
 import IconMoonFill from '@/assets/icons/moon-fill.svg?component'
 import IconArchive from '@/assets/icons/archive.svg?component'
 import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 
-const { signOut, isPending } = useLogoutMutation()
+import { useAuth } from '@/composables/useAuth'
+import { useTheme } from '@/composables/useTheme'
+
+const { logout, isLogoutPending } = useAuth()
 const { theme } = useTheme()
 </script>
 
@@ -59,7 +59,7 @@ const { theme } = useTheme()
         <IconArrowRight class="size-4 text-muted-foreground/40" aria-hidden="true" />
       </RouterLink>
 
-      <BaseButton variant="secondary" :disabled="isPending" class="mt-4" @click="signOut">
+      <BaseButton variant="secondary" :disabled="isLogoutPending" class="mt-4" @click="logout">
         Sign out
       </BaseButton>
     </div>

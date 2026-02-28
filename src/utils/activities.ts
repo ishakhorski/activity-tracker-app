@@ -1,20 +1,17 @@
 import { format } from 'date-fns'
 
 import type { Activity, EnrichedActivity } from '@/types/activity'
-import type { CompletionWithUser } from '@/types/completion'
-import {
-  ACTIVITY_SCHEDULE_TYPE,
-  type ActivitySchedule,
-  type Weekday,
-} from '@/types/activitySchedule'
+import type { EnrichedCompletion } from '@/types/completion'
+import { ACTIVITY_SCHEDULE_TYPE, type ActivitySchedule } from '@/types/activitySchedule'
+import type { Weekday } from '@/types/weekday'
 
 export const toLocalDateKey = (date: Date): string => format(date, 'yyyy-MM-dd')
 
 export const enrichActivity = (
   activity: Activity,
-  completions: CompletionWithUser[],
+  completions: EnrichedCompletion[],
 ): EnrichedActivity => {
-  const completionsByDate: Record<string, CompletionWithUser[]> = {}
+  const completionsByDate: Record<string, EnrichedCompletion[]> = {}
   for (const completion of completions) {
     if (completion.activityId !== activity.id) continue
     const key = toLocalDateKey(new Date(completion.completedAt))

@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
-import { onMounted } from 'vue'
+import { computed, onMounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { useLoginMutation } from '@/composables/useAuth'
-import { AUTH_CONNECTOR, type AuthConnector } from '@/types/auth'
-
+import AppLogo from '@/components/molecules/AppLogo.vue'
 import IconGoogle from '@/assets/icons/google.svg?component'
 import IconApple from '@/assets/icons/apple.svg?component'
 
-import AppLogo from '@/components/molecules/AppLogo.vue'
+import { useAuth } from '@/composables/useAuth'
+import { AUTH_CONNECTOR, type AuthConnector } from '@/types/auth'
 
 const route = useRoute()
 const router = useRouter()
-const { login, isPending } = useLoginMutation()
+const { login, isLoginPending } = useAuth()
+
+const errorQuery = route.query.error as string | undefined
+const errorDescriptionQuery = route.query.error_description as string | undefined
 
 const providers: { connection: AuthConnector; label: string; icon: Component }[] = [
   { connection: AUTH_CONNECTOR.GOOGLE, label: 'Continue with Google', icon: IconGoogle },
@@ -29,16 +30,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   callback_error: 'Something went wrong while completing sign-in.',
 }
 
-// Capture at setup time before the query is cleared.
-const errorCode = route.query.error as string | undefined
-const errorDescription = route.query.error_description as string | undefined
-
-const authError = errorCode
-  ? errorDescription || ERROR_MESSAGES[errorCode] || 'Sign-in failed. Please try again.'
-  : null
+const authError = computed(() => {
+  return errorQuery
+    ? errorDescriptionQuery || ERROR_MESSAGES[errorQuery] || 'Sign-in failed. Please try again.'
+    : null
+})
 
 onMounted(() => {
-  if (errorCode) {
+  if (errorQuery) {
     router.replace({ ...route, query: {} })
   }
 })
@@ -54,7 +53,7 @@ onMounted(() => {
     </div>
 
     <Transition name="auth-swap" mode="out-in">
-      <div v-if="!isPending" key="content" class="grid w-full">
+      <div v-if="!isLoginPending" key="content" class="grid w-full">
         <div class="overflow-hidden min-h-14">
           <p v-if="authError" class="text-xs text-center text-destructive mb-4">{{ authError }}</p>
 

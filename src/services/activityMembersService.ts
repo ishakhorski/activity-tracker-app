@@ -1,21 +1,24 @@
 import { http } from './http'
 
-import type {
-  ActivityMember,
-  ActivityMemberWithUser,
-  CreateActivityMember,
-} from '@/types/activityMember'
+import type { EnrichedActivityMember, CreateActivityMember } from '@/types/activityMember'
 
 export const getActivityMembers = (
   activityId: string,
-): Promise<{ data: ActivityMemberWithUser[]; total: number }> => {
-  return http.get<{ data: ActivityMemberWithUser[]; total: number }>(
-    `/activities/${activityId}/members`,
+  pagination: { limit?: number; offset?: number } = {},
+): Promise<{ data: EnrichedActivityMember[]; total: number }> => {
+  const { limit = 100, offset = 0 } = pagination
+  const params: Record<string, string> = {
+    limit: String(limit),
+    offset: String(offset),
+  }
+  return http.get<{ data: EnrichedActivityMember[]; total: number }>(
+    `/activities/${activityId}/activity-members`,
+    { params },
   )
 }
 
-export const createActivityMember = (data: CreateActivityMember): Promise<ActivityMember> => {
-  return http.post<ActivityMember>('/activity-members', data)
+export const createActivityMember = (data: CreateActivityMember): Promise<string> => {
+  return http.post<string>('/activity-members', data)
 }
 
 export const deleteActivityMember = (id: string): Promise<void> => {

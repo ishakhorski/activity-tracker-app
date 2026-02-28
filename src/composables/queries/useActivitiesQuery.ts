@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/vue-query'
 
-import { getAllActivities } from '@/services/activitiesService'
+import { getActivities } from '@/services/activitiesService'
 
-export const ACTIVITIES_QUERY_KEY = ['activities'] as const
+export const ACTIVITIES_QUERY_KEY = 'activities' as const
 
 export const useActivitiesQuery = () => {
   return useQuery({
-    queryKey: ACTIVITIES_QUERY_KEY,
+    queryKey: [ACTIVITIES_QUERY_KEY],
     queryFn: async () => {
-      const response = await getAllActivities()
+      const response = await getActivities()
       return response.data
     },
   })

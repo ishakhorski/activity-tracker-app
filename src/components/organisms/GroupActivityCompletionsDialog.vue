@@ -11,11 +11,11 @@ import { BaseButton } from '@/components/atoms/button'
 import { BaseTextarea } from '@/components/atoms/textarea'
 import IconBolt from '@/assets/icons/bolt.svg?component'
 
-import type { CompletionWithUser } from '@/types/completion'
+import type { EnrichedCompletion } from '@/types/completion'
 
 const props = defineProps<{
   date: Date | null
-  completions: CompletionWithUser[]
+  completions: EnrichedCompletion[]
   canComplete: boolean
   confirm: (data: { note: string }) => void
   cancel: () => void

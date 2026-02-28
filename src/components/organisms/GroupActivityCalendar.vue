@@ -6,11 +6,11 @@ import GroupActivityMonthGrid from '@/components/molecules/GroupActivityMonthGri
 import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 
 import type { ActivitySchedule } from '@/types/activitySchedule'
-import type { CompletionWithUser } from '@/types/completion'
+import type { EnrichedCompletion } from '@/types/completion'
 
 const props = defineProps<{
   schedule: ActivitySchedule
-  completionsByDate: Record<string, CompletionWithUser[]>
+  completionsByDate: Record<string, EnrichedCompletion[]>
   from: string
   loading: boolean
   canGoPrev: boolean

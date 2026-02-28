@@ -2,7 +2,6 @@ export const STATISTIC_TYPE = {
   COMPLETION_RATE: 'completion_rate',
   THROUGHPUT: 'throughput',
 } as const
-
 export type StatisticType = (typeof STATISTIC_TYPE)[keyof typeof STATISTIC_TYPE]
 
 export interface CompletionRateDataPoint {
@@ -39,8 +38,3 @@ export interface ThroughputStatistic {
 export type Statistic = CompletionRateStatistic | ThroughputStatistic
 
 export type ActivityStatistic<T extends Statistic = Statistic> = T & { activityId: string }
-
-export interface StatisticsParams {
-  dateFrom: string
-  dateTo: string
-}

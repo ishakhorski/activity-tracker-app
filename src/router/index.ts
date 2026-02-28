@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { LAYOUT, type Layout } from '@/types/layout'
 import { AUTH_ROLE, type AuthRole } from '@/types/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    layout?: 'auth' | 'main' | 'secondary' | 'empty'
+    layout?: Layout
     roles?: AuthRole[]
   }
 }
@@ -16,13 +17,13 @@ const router = createRouter({
       path: '/auth/login',
       name: 'login',
       component: () => import('@/views/auth/AuthLoginView.vue'),
-      meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
+      meta: { layout: LAYOUT.AUTH, roles: [AUTH_ROLE.PUBLIC] },
     },
     {
       path: '/auth/callback',
       name: 'auth-callback',
       component: () => import('@/views/auth/AuthCallbackView.vue'),
-      meta: { layout: 'auth', roles: [AUTH_ROLE.PUBLIC] },
+      meta: { layout: LAYOUT.AUTH, roles: [AUTH_ROLE.PUBLIC] },
     },
 
     {
@@ -33,31 +34,33 @@ const router = createRouter({
       path: '/activities',
       name: 'activities-view',
       component: () => import('@/views/activities/ActivitiesView.vue'),
-      meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
+      meta: { layout: LAYOUT.MAIN, roles: [AUTH_ROLE.USER] },
     },
     {
       path: '/activities/:type/:id',
       name: 'activity-details',
       component: () => import('@/views/activities/ActivityDetailsView.vue'),
-      meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
+      meta: { layout: LAYOUT.SECONDARY, roles: [AUTH_ROLE.USER] },
     },
+
     {
       path: '/stats',
       name: 'stats-view',
       component: () => import('@/views/StatsView.vue'),
-      meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
+      meta: { layout: LAYOUT.MAIN, roles: [AUTH_ROLE.USER] },
     },
+
     {
       path: '/settings',
       name: 'settings-view',
       component: () => import('@/views/SettingsView.vue'),
-      meta: { layout: 'main', roles: [AUTH_ROLE.USER] },
+      meta: { layout: LAYOUT.MAIN, roles: [AUTH_ROLE.USER] },
     },
     {
       path: '/settings/archived',
       name: 'archived-view',
       component: () => import('@/views/activities/ArchivedActivitiesView.vue'),
-      meta: { layout: 'secondary', roles: [AUTH_ROLE.USER] },
+      meta: { layout: LAYOUT.SECONDARY, roles: [AUTH_ROLE.USER] },
     },
   ],
 })

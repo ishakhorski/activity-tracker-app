@@ -8,7 +8,7 @@ export interface Completion {
   updatedAt: string
 }
 
-export interface CompletionWithUser extends Completion {
+export interface EnrichedCompletion extends Completion {
   displayName: string
 }
 

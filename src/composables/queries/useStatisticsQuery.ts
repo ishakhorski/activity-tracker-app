@@ -1,21 +1,27 @@
-import { computed, type Ref } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 
 import { getStatistics } from '@/services/statisticsService'
 import type { Statistic, StatisticType } from '@/types/statistics'
 
-export const STATISTICS_QUERY_KEY = ['statistics'] as const
-
-const STALE_TIME = 5 * 60 * 1000
+export const STATISTICS_QUERY_KEY = 'statistics' as const
 
 export const useStatisticsQuery = <T extends Statistic = Statistic>(
-  type: Ref<StatisticType>,
-  from: Ref<string>,
-  to: Ref<string>,
+  statisticType: MaybeRefOrGetter<StatisticType>,
+  dateFrom: MaybeRefOrGetter<string>,
+  dateTo: MaybeRefOrGetter<string>,
 ) => {
   return useQuery({
-    queryKey: computed(() => [...STATISTICS_QUERY_KEY, type.value, from.value, to.value]),
-    queryFn: () => getStatistics<T>(type.value, { dateFrom: from.value, dateTo: to.value }),
-    staleTime: STALE_TIME,
+    queryKey: computed(() => [
+      STATISTICS_QUERY_KEY,
+      toValue(statisticType),
+      toValue(dateFrom),
+      toValue(dateTo),
+    ]),
+    queryFn: () =>
+      getStatistics<T>(toValue(statisticType), {
+        dateFrom: toValue(dateFrom),
+        dateTo: toValue(dateTo),
+      }),
   })
 }

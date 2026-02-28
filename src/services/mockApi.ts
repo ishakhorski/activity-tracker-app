@@ -7,6 +7,7 @@ import {
   type ThroughputStatistic,
   type StatisticType,
 } from '@/types/statistics'
+import { toLocalDateKey } from '@/utils/activities'
 
 const MOCK_USER_ID = 'mock-user-id'
 
@@ -22,12 +23,12 @@ const ACTIVITY_MEMBERS_KEY = 'mock:activity-members'
 
 // --- Storage helpers ---
 
-function getItems<T>(key: string): T[] {
+const getItems = <T>(key: string): T[] => {
   const raw = localStorage.getItem(key)
   return raw ? (JSON.parse(raw) as T[]) : []
 }
 
-function setItems<T>(key: string, items: T[]): void {
+const setItems = <T>(key: string, items: T[]): void => {
   localStorage.setItem(key, JSON.stringify(items))
 }
 
@@ -46,47 +47,34 @@ interface MockResponse {
   body?: unknown
 }
 
-function json(body: unknown, status = 200): MockResponse {
-  return { status, body }
-}
-
-function noContent(): MockResponse {
-  return { status: 204 }
-}
-
-function notFound(message = 'Not found'): MockResponse {
-  return { status: 404, body: { error: message } }
-}
+const json = (body: unknown, status = 200): MockResponse => ({ status, body })
+const noContent = (): MockResponse => ({ status: 204 })
+const notFound = (message = 'Not found'): MockResponse => ({
+  status: 404,
+  body: { error: message },
+})
 
 // --- Statistics helpers ---
 
-function localDateKey(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function getScheduledTarget(schedule: Activity['schedule'], dayOfWeek: number): number {
+const getScheduledTarget = (schedule: Activity['schedule'], dayOfWeek: number): number => {
   if (schedule.type === 'weekly') {
     return (schedule.days as number[]).includes(dayOfWeek) ? schedule.targetCompletions : 0
   }
   return schedule.targetCompletions
 }
 
-function computeCompletionRate(
+const computeCompletionRate = (
   activities: Activity[],
   completions: Completion[],
   fromDate: Date,
   toDate: Date,
-): CompletionRateStatistic {
-  // Group completions by activityId → dateKey → count (within range)
+): CompletionRateStatistic => {
   const byActivityDate: Record<string, Record<string, number>> = {}
   for (const c of completions) {
     const d = new Date(c.completedAt)
     if (d < fromDate || d > toDate) continue
     const actDates = (byActivityDate[c.activityId] ??= {})
-    const key = localDateKey(d)
+    const key = toLocalDateKey(d)
     actDates[key] = (actDates[key] ?? 0) + 1
   }
 
@@ -97,7 +85,7 @@ function computeCompletionRate(
     for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
       const target = getScheduledTarget(activity.schedule, d.getDay())
       if (target === 0) continue
-      const key = localDateKey(d)
+      const key = toLocalDateKey(d)
       const entry = (dataMap[key] ??= { scheduled: 0, completed: 0 })
       entry.scheduled += target
       entry.completed += Math.min(actDates[key] ?? 0, target)
@@ -131,12 +119,12 @@ function computeCompletionRate(
   }
 }
 
-function computeThroughput(
+const computeThroughput = (
   activities: Activity[],
   completions: Completion[],
   fromDate: Date,
   toDate: Date,
-): ThroughputStatistic {
+): ThroughputStatistic => {
   const activityIds = new Set(activities.map((a) => a.id))
 
   const byDate: Record<string, number> = {}
@@ -144,7 +132,7 @@ function computeThroughput(
     if (!activityIds.has(c.activityId)) continue
     const d = new Date(c.completedAt)
     if (d < fromDate || d > toDate) continue
-    const key = localDateKey(d)
+    const key = toLocalDateKey(d)
     byDate[key] = (byDate[key] ?? 0) + 1
   }
 
@@ -153,7 +141,7 @@ function computeThroughput(
   const data: ThroughputStatistic['data'] = []
 
   for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
-    const key = localDateKey(d)
+    const key = toLocalDateKey(d)
     const completed = byDate[key] ?? 0
     data.push({ date: key, completed })
     total += completed
@@ -168,6 +156,16 @@ function computeThroughput(
       average: dayCount > 0 ? Math.round((total / dayCount) * 100) / 100 : 0,
     },
   }
+}
+
+const parseDateRange = (url: URL): { fromDate: Date; toDate: Date } => {
+  const from = url.searchParams.get('from')
+  const to = url.searchParams.get('to')
+  const fromDate = from ? new Date(from) : new Date(0)
+  const toDate = to ? new Date(to) : new Date()
+  fromDate.setHours(0, 0, 0, 0)
+  toDate.setHours(23, 59, 59, 999)
+  return { fromDate, toDate }
 }
 
 // --- Routes ---
@@ -218,7 +216,6 @@ const routes: Route[] = [
       all.push(activity)
       setItems(ACTIVITIES_KEY, all)
 
-      // Auto-create owner membership
       const members = getItems<ActivityMember>(ACTIVITY_MEMBERS_KEY)
       members.push({
         id: crypto.randomUUID(),
@@ -250,37 +247,6 @@ const routes: Route[] = [
     },
   },
 
-  // POST /activities/:id/archive
-  {
-    method: 'POST',
-    pattern: /^\/activities\/([^/]+)\/archive$/,
-    handler: ({ match }) => {
-      const all = getItems<Activity>(ACTIVITIES_KEY)
-      const existing = all.find((a) => a.id === match[1])
-      if (!existing) return notFound('Activity not found')
-      const now = new Date().toISOString()
-      const updated = { ...existing, archivedAt: now, updatedAt: now }
-      all[all.indexOf(existing)] = updated
-      setItems(ACTIVITIES_KEY, all)
-      return json(updated)
-    },
-  },
-
-  // POST /activities/:id/unarchive
-  {
-    method: 'POST',
-    pattern: /^\/activities\/([^/]+)\/unarchive$/,
-    handler: ({ match }) => {
-      const all = getItems<Activity>(ACTIVITIES_KEY)
-      const existing = all.find((a) => a.id === match[1])
-      if (!existing) return notFound('Activity not found')
-      const updated = { ...existing, archivedAt: null, updatedAt: new Date().toISOString() }
-      all[all.indexOf(existing)] = updated
-      setItems(ACTIVITIES_KEY, all)
-      return json(updated)
-    },
-  },
-
   // DELETE /activities/:id
   {
     method: 'DELETE',
@@ -302,21 +268,12 @@ const routes: Route[] = [
     handler: ({ url }) => {
       const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
       const offset = parseInt(url.searchParams.get('offset') ?? '0', 10)
-      const from = url.searchParams.get('from')
-      const to = url.searchParams.get('to')
+      const { fromDate, toDate } = parseDateRange(url)
 
-      let all = getItems<Completion>(COMPLETIONS_KEY)
-
-      if (from && to) {
-        const fromDate = new Date(from)
-        const toDate = new Date(to)
-        fromDate.setHours(0, 0, 0, 0)
-        toDate.setHours(23, 59, 59, 999)
-        all = all.filter((c) => {
-          const t = new Date(c.completedAt)
-          return t >= fromDate && t <= toDate
-        })
-      }
+      const all = getItems<Completion>(COMPLETIONS_KEY).filter((c) => {
+        const t = new Date(c.completedAt)
+        return t >= fromDate && t <= toDate
+      })
 
       const data = all.slice(offset, offset + limit).map((c) => ({
         ...c,
@@ -366,7 +323,7 @@ const routes: Route[] = [
   // GET /activities/:id/members
   {
     method: 'GET',
-    pattern: /^\/activities\/([^/]+)\/members\/?$/,
+    pattern: /^\/activities\/([^/]+)\/activity-members\/?$/,
     handler: ({ match, url }) => {
       const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
       const offset = parseInt(url.searchParams.get('offset') ?? '0', 10)
@@ -399,7 +356,7 @@ const routes: Route[] = [
       }
       all.push(member)
       setItems(ACTIVITY_MEMBERS_KEY, all)
-      return json(member, 201)
+      return json(member.id, 201)
     },
   },
 
@@ -423,14 +380,7 @@ const routes: Route[] = [
     pattern: /^\/statistics\/([^/]+)\/?$/,
     handler: ({ match, url }) => {
       const type = match[1] as StatisticType
-
-      const from = url.searchParams.get('from')
-      const to = url.searchParams.get('to')
-      const fromDate = from ? new Date(from) : new Date(0)
-      const toDate = to ? new Date(to) : new Date()
-      fromDate.setHours(0, 0, 0, 0)
-      toDate.setHours(23, 59, 59, 999)
-
+      const { fromDate, toDate } = parseDateRange(url)
       const activities = getItems<Activity>(ACTIVITIES_KEY).filter((a) => !a.archivedAt)
       const completions = getItems<Completion>(COMPLETIONS_KEY)
 
@@ -449,17 +399,10 @@ const routes: Route[] = [
     handler: ({ match, url }) => {
       const activityId = match[1]!
       const type = match[2] as StatisticType
-
       const activity = getItems<Activity>(ACTIVITIES_KEY).find((a) => a.id === activityId)
       if (!activity) return notFound('Activity not found')
 
-      const from = url.searchParams.get('from')
-      const to = url.searchParams.get('to')
-      const fromDate = from ? new Date(from) : new Date(0)
-      const toDate = to ? new Date(to) : new Date()
-      fromDate.setHours(0, 0, 0, 0)
-      toDate.setHours(23, 59, 59, 999)
-
+      const { fromDate, toDate } = parseDateRange(url)
       const completions = getItems<Completion>(COMPLETIONS_KEY)
 
       if (type === STATISTIC_TYPE.COMPLETION_RATE)
@@ -474,25 +417,22 @@ const routes: Route[] = [
   },
 ]
 
-// --- Seed data ---
-
 const MOCK_KEYS = [ACTIVITIES_KEY, COMPLETIONS_KEY, ACTIVITY_MEMBERS_KEY]
 const SEED_KEY = 'mock:seeded_v5'
 
-function daysAgo(n: number): string {
+const daysAgo = (n: number): string => {
   const d = new Date()
   d.setDate(d.getDate() - n)
   d.setHours(0, 0, 0, 0)
   return d.toISOString()
 }
 
-// Simple deterministic pseudo-random per (a, b) seed pair
-function pseudoRand(a: number, b: number): number {
+const pseudoRand = (a: number, b: number): number => {
   const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453
   return x - Math.floor(x)
 }
 
-function generateCompletions(
+const generateCompletions = (
   activityIdx: number,
   activityId: string,
   createdAtStr: string,
@@ -501,7 +441,7 @@ function generateCompletions(
   scheduledDays: number[] | null,
   hitRate: number,
   userId: string = MOCK_USER_ID,
-): Completion[] {
+): Completion[] => {
   const completions: Completion[] = []
   const start = new Date(createdAtStr)
   start.setHours(0, 0, 0, 0)
@@ -516,7 +456,6 @@ function generateCompletions(
     const r = pseudoRand(activityIdx, dayIdx)
     if (r >= hitRate) continue
 
-    // Occasionally overachieve
     const count = pseudoRand(activityIdx + 50, dayIdx) < 0.1 ? targetPerDay + 1 : targetPerDay
 
     for (let i = 0; i < count; i++) {
@@ -538,20 +477,15 @@ function generateCompletions(
   return completions
 }
 
-export function resetMockData(): void {
+export const resetMockData = (): void => {
   MOCK_KEYS.forEach((key) => localStorage.removeItem(key))
   localStorage.removeItem(SEED_KEY)
   console.log('[Mock API] Storage cleared')
 }
 
-function seedMockData(): void {
+const seedMockData = (): void => {
   const today = new Date().toISOString()
 
-  // --- Active activities ---
-  // 1. Daily × 1 (personal)
-  // 2. Daily × 2 (personal)
-  // 3. Weekly Mon/Wed/Fri × 1 (personal)
-  // 4. Weekly Tue/Thu/Sat × 1 (group)
   const activities: Activity[] = [
     {
       id: 'seed-act-1',
@@ -593,8 +527,6 @@ function seedMockData(): void {
       updatedAt: daysAgo(118),
       archivedAt: null,
     },
-    // --- Archived activities ---
-    // 5. Daily × 1 — active ~3 months, archived ~5 weeks ago
     {
       id: 'seed-act-5',
       title: 'Evening Journal',
@@ -605,7 +537,6 @@ function seedMockData(): void {
       updatedAt: daysAgo(35),
       archivedAt: daysAgo(35),
     },
-    // 6. Weekly Tue/Thu × 1 — active ~2.5 months, archived ~3 weeks ago
     {
       id: 'seed-act-6',
       title: 'Swimming',
@@ -644,7 +575,6 @@ function seedMockData(): void {
       0.55,
       'mock-user-bob',
     ),
-    // Archived: completions only up to archivedAt
     ...generateCompletions(4, 'seed-act-5', act5!.createdAt, act5!.archivedAt!, 1, null, 0.77),
     ...generateCompletions(5, 'seed-act-6', act6!.createdAt, act6!.archivedAt!, 1, [2, 4], 0.72),
   ]
@@ -686,7 +616,7 @@ function seedMockData(): void {
   )
 }
 
-export function resetAndSeedMockData(): void {
+export const resetAndSeedMockData = (): void => {
   resetMockData()
   seedMockData()
 }
@@ -697,7 +627,7 @@ interface MockApiOptions {
   delay?: number
 }
 
-export function enableMockApi(options: MockApiOptions = {}): void {
+export const enableMockApi = (options: MockApiOptions = {}): void => {
   const { delay = 50 } = options
   const originalFetch = window.fetch
 
@@ -705,7 +635,6 @@ export function enableMockApi(options: MockApiOptions = {}): void {
     const request = input instanceof Request ? input : new Request(input, init)
     const method = (init?.method ?? request.method ?? 'GET').toUpperCase()
     const url = new URL(request.url)
-
     const pathname = url.pathname.replace(/^\/api/, '')
 
     for (const route of routes) {
@@ -722,7 +651,6 @@ export function enableMockApi(options: MockApiOptions = {}): void {
         }
       }
 
-      // Simulate network delay
       await new Promise((r) => setTimeout(r, delay))
 
       const result = route.handler({ match, url, body })
@@ -737,10 +665,7 @@ export function enableMockApi(options: MockApiOptions = {}): void {
     return originalFetch(input, init)
   }
 
-  if (!localStorage.getItem(SEED_KEY))
-    seedMockData()
-
-    // Expose reset helpers on window for easy use in dev console
+  if (!localStorage.getItem(SEED_KEY)) seedMockData()
   ;(window as unknown as Record<string, unknown>).__mockApi = {
     reset: resetMockData,
     seed: resetAndSeedMockData,

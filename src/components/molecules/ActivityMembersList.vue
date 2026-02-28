@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { BaseButton } from '@/components/atoms/button'
 import { useActivityMembersQuery } from '@/composables/queries/useActivityMembersQuery'
 
 const props = defineProps<{
   activityId: string
 }>()
-
-const emit = defineEmits<{ invite: [] }>()
 
 const activityId = computed(() => props.activityId)
 const { data: members, isLoading } = useActivityMembersQuery(activityId)
@@ -54,9 +51,5 @@ const initials = (name: string) => name.charAt(0).toUpperCase()
         No members yet.
       </p>
     </template>
-
-    <BaseButton variant="secondary" class="w-full mt-2" @click="emit('invite')">
-      Invite Members
-    </BaseButton>
   </div>
 </template>

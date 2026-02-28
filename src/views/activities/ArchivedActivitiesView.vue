@@ -9,7 +9,8 @@ import IconArrowRight from '@/assets/icons/arrow-right.svg?component'
 import IconArchive from '@/assets/icons/archive.svg?component'
 
 import { useActivitiesQuery } from '@/composables/queries/useActivitiesQuery'
-import { ACTIVITY_SCHEDULE_TYPE, WEEKDAY_LABELS, WEEKDAYS_ORDERED } from '@/types/activitySchedule'
+import { ACTIVITY_SCHEDULE_TYPE } from '@/types/activitySchedule'
+import { WEEKDAY_LABELS, WEEKDAYS_ORDERED } from '@/types/weekday'
 
 const { data: activitiesData, isLoading } = useActivitiesQuery()
 

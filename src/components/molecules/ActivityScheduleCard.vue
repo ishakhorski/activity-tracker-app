@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { ACTIVITY_SCHEDULE_TYPE, WEEKDAY_LABELS, WEEKDAYS_ORDERED } from '@/types/activitySchedule'
-import type { ActivitySchedule } from '@/types/activitySchedule'
+import { ACTIVITY_SCHEDULE_TYPE, type ActivitySchedule } from '@/types/activitySchedule'
+import { WEEKDAY_LABELS, WEEKDAYS_ORDERED } from '@/types/weekday'
 
 const props = defineProps<{
   schedule: ActivitySchedule

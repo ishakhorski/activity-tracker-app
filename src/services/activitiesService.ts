@@ -2,7 +2,7 @@ import { http } from './http'
 
 import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
 
-export const getAllActivities = (
+export const getActivities = (
   pagination: { limit?: number; offset?: number } = {},
 ): Promise<{ data: Activity[]; total: number }> => {
   const { limit = 100, offset = 0 } = pagination

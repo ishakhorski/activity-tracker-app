@@ -13,8 +13,8 @@ export interface ActivityMember {
   updatedAt: string
 }
 
-export type CreateActivityMember = Omit<ActivityMember, 'id' | 'createdAt' | 'updatedAt'>
-
-export interface ActivityMemberWithUser extends ActivityMember {
+export interface EnrichedActivityMember extends ActivityMember {
   displayName: string
 }
+
+export type CreateActivityMember = Omit<ActivityMember, 'id' | 'createdAt' | 'updatedAt'>
