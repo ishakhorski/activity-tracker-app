@@ -10,6 +10,7 @@ import {
 } from '@/components/atoms/dialog'
 import { BaseButton } from '@/components/atoms/button'
 import { BaseInput } from '@/components/atoms/input'
+import { BaseTextarea } from '@/components/atoms/textarea'
 import {
   BaseNumberStepper,
   BaseNumberStepperDecreaseButton,
@@ -34,6 +35,7 @@ const { createActivity } = useActivityCreateMutation()
 const open = defineModel<boolean>('open', { default: false })
 
 const title = ref('')
+const description = ref('')
 const scheduleType = ref<string>(ACTIVITY_SCHEDULE_TYPE.DAILY)
 const targetCompletions = ref(1)
 const selectedDays = ref<Weekday[]>([...WEEKDAYS_ORDERED])
@@ -62,6 +64,7 @@ const isDaySelected = (day: Weekday) => {
 
 const resetForm = () => {
   title.value = ''
+  description.value = ''
   scheduleType.value = ACTIVITY_SCHEDULE_TYPE.DAILY
   targetCompletions.value = 1
   selectedDays.value = [...WEEKDAYS_ORDERED]
@@ -82,7 +85,7 @@ const handleSave = () => {
   createActivity({
     type: ACTIVITY_TYPE.PERSONAL,
     title: title.value.trim(),
-    description: null,
+    description: description.value.trim() || null,
     schedule,
   })
   resetForm()
@@ -105,6 +108,19 @@ const handleSave = () => {
             v-model="title"
             type="text"
             placeholder="e.g. Morning Run"
+          />
+        </div>
+
+        <div class="grid gap-2">
+          <label for="activity-description" class="text-sm font-medium">
+            Description
+            <span class="text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <BaseTextarea
+            id="activity-description"
+            v-model="description"
+            placeholder="e.g. 30 minutes at a steady pace"
+            rows="3"
           />
         </div>
 

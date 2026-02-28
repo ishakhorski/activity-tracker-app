@@ -37,7 +37,7 @@ views → composables → services → HTTP client
 
 **Dynamic layout system:** Routes declare `meta.layout` (`auth` | `main` | `secondary` | `empty`). `App.vue` dynamically loads the matching layout component from `src/layouts/`.
 
-**Mock API:** `src/plugins/mockApiPlugin.ts` intercepts `fetch` calls in development (2s simulated delay) to enable offline development without a backend.
+**Mock API:** `src/plugins/mockApiPlugin.ts` intercepts `fetch` calls via a `beforeFetch` event listener. Data is persisted in localStorage (`mock:activities`, `mock:completions`, `mock:activity-members`). Seed data is initialized once under `mock:seeded_v3`.
 
 ### Directory Structure
 
@@ -45,16 +45,18 @@ views → composables → services → HTTP client
 src/
 ├── components/
 │   ├── atoms/        # Primitive UI elements (Button, Input, Dialog, etc.)
-│   ├── molecules/    # Composed atoms (PageHeader, PageContent, AppLogo)
+│   ├── molecules/    # Composed atoms (PageHeader, PageContent, ActivityBrick, grids)
 │   └── organisms/    # Feature-level components (ActivityCard, CreateActivityDialog)
-├── composables/      # Reusable logic — useActivities, useCompletions, useAuth, useTheme
+├── composables/
+│   ├── queries/      # TanStack Query hooks (useActivitiesQuery, useCompletionsQuery, etc.)
+│   └── mutations/    # TanStack mutations (useActivityCreateMutation, useCompletionCreateMutation, etc.)
 ├── layouts/          # AuthLayout, MainLayout, SecondaryLayout, EmptyLayout
 ├── plugins/          # Vue plugins: Auth0, TanStack Query, Mock API
 ├── router/           # Routes with meta.layout and auth guards
 ├── services/
-│   ├── http/         # Custom fetch-based HTTP client with HttpError class
+│   ├── http/         # HttpClient class + HttpError (fetch-based, no axios)
 │   └── *.ts          # Service modules per resource (activitiesService, completionsService, etc.)
-├── types/            # TypeScript interfaces: Activity, Completion, Schedule, etc.
+├── types/            # TypeScript interfaces: Activity, EnrichedActivity, Completion, Schedule, DaysGrid, etc.
 ├── utils/            # Pure utility functions (activity scheduling, completion date logic)
 └── views/            # Page components
 ```
@@ -69,24 +71,48 @@ export const getAllActivities = (pagination) => http.get(...)
 export const updateActivity = (id, data) => http.patch(...)
 ```
 
-Composables wrap services with TanStack Query and expose reactive state:
+Queries live in `composables/queries/` and mutations in `composables/mutations/`:
 
 ```typescript
-// composables/useActivities.ts
-export function useActivities() {
-  const query = useQuery({ queryKey: ['activities'], queryFn: getAllActivities })
-  const mutation = useMutation({ mutationFn: createActivity, onMutate: ..., onError: ... })
-  return { activities: query.data, createActivity: mutation.mutate, ... }
-}
+// composables/queries/useActivitiesQuery.ts
+const ACTIVITIES_QUERY_KEY = ['activities'] as const
+export const useActivitiesQuery = () => useQuery({
+  queryKey: ACTIVITIES_QUERY_KEY,
+  queryFn: () => getAllActivities().then(res => res.data),
+})
 ```
 
-Mutations use **optimistic updates** — update the cache immediately, roll back on error, then invalidate to refetch.
+**Optimistic updates** use a temp ID pattern: generate `temp-${crypto.randomUUID()}` in `onMutate`, replace with the real server ID in `onSuccess`, roll back in `onError`, then invalidate in `onSettled`.
+
+The `useEnrichedActivities()` composable combines the activities and completions queries into a single computed — filtering archived, mapping via `enrichActivity()`, and sorting so completed activities appear last.
 
 ### Data Models
 
 - `Activity`: `id`, `title`, `description`, `type` (`personal` | `group`), `schedule`, `archivedAt`
+- `EnrichedActivity`: `Activity` + `completionsByDate: Record<string, Completion[]>` (populated by `enrichActivity()` in `utils/activities.ts`)
 - `Schedule`: `DailySchedule { type: 'daily', targetCompletions }` or `WeeklySchedule { type: 'weekly', days: Weekday[], targetCompletions }`
 - `Completion`: `id`, `activityId`, `userId`, `completedAt`, `note`
+- `DaysGrid`: array of `{ dateKey, dayNumber, weekday, weekdayLabel, position: 'past' | 'today' | 'future' }`
+
+### Key Utility Functions
+
+`utils/activities.ts`:
+- `enrichActivity(activity, completions)` — merges completions into `completionsByDate` record
+- `isScheduledOnDay(activity, dayOfWeek)` / `isScheduledToday(activity)` — schedule checks
+- `getDayStatus(count, target)` → `'completed' | 'partial' | 'uncompleted' | 'none'`
+- `DAY_STATUS_BRICK_VARIANT` — maps status to ActivityBrick variant (`solid | soft | faint | ghost`)
+
+`utils/completions.ts`:
+- `getDateRange(days?)` — ISO date range for the last N days
+- `getTodayCompletionCount(completions, activityId)`
+
+### HTTP Client
+
+`services/http/httpClient.ts` exports a singleton `http` instance of `HttpClient`. All methods accept an `options` object with `searchParams` and `signal`. Errors throw `HttpError` with `status`, `statusText`, and `body`. A 204 response returns `undefined`.
+
+### Auth
+
+`src/plugins/auth0Plugin.ts` wraps `@auth0/auth0-spa-js`. The plugin provides `Auth0State` (isAuthenticated, user, loginWithRedirect, logout, getAccessTokenSilently) via `app.provide()`. Use `useAuth0()` to inject it. Auth roles (`PUBLIC` / `USER`) and connectors (`google-oauth2` / `apple`) are declared as constants in the plugin.
 
 ### Code Style
 
@@ -97,7 +123,7 @@ Enforced by Prettier + ESLint — run `npm run lint` to auto-fix:
 - Path alias `@/*` resolves to `src/*`
 - Unused vars allowed if prefixed with `__`
 - Flag variables prefixed with `is`
-- Priority yo use arrow functions
+- Prefer arrow functions
 
 ### Environment Variables
 

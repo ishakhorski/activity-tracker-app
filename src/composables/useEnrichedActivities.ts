@@ -42,7 +42,7 @@ export function useEnrichedActivities() {
         const bCompleted =
           getDayStatus(bCount, getTargetForDay(b.schedule, todayWeekday)) === 'completed'
         if (aCompleted !== bCompleted) return aCompleted ? 1 : -1
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
   })
 

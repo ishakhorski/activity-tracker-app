@@ -1,6 +1,12 @@
 import type { Activity, CreateActivity, UpdateActivity } from '@/types/activity'
 import type { Completion, CreateCompletion } from '@/types/completion'
 import type { ActivityMember, CreateActivityMember } from '@/types/activityMember'
+import {
+  STATISTIC_TYPE,
+  type CompletionRateStatistic,
+  type ThroughputStatistic,
+  type StatisticType,
+} from '@/types/statistics'
 
 const MOCK_USER_ID = 'mock-user-id'
 
@@ -44,6 +50,118 @@ function noContent(): MockResponse {
 
 function notFound(message = 'Not found'): MockResponse {
   return { status: 404, body: { error: message } }
+}
+
+// --- Statistics helpers ---
+
+function localDateKey(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function getScheduledTarget(schedule: Activity['schedule'], dayOfWeek: number): number {
+  if (schedule.type === 'weekly') {
+    return (schedule.days as number[]).includes(dayOfWeek) ? schedule.targetCompletions : 0
+  }
+  return schedule.targetCompletions
+}
+
+function computeCompletionRate(
+  activities: Activity[],
+  completions: Completion[],
+  fromDate: Date,
+  toDate: Date,
+): CompletionRateStatistic {
+  // Group completions by activityId → dateKey → count (within range)
+  const byActivityDate: Record<string, Record<string, number>> = {}
+  for (const c of completions) {
+    const d = new Date(c.completedAt)
+    if (d < fromDate || d > toDate) continue
+    const actDates = (byActivityDate[c.activityId] ??= {})
+    const key = localDateKey(d)
+    actDates[key] = (actDates[key] ?? 0) + 1
+  }
+
+  const dataMap: Record<string, { scheduled: number; completed: number }> = {}
+
+  for (const activity of activities) {
+    const actDates = byActivityDate[activity.id] ?? {}
+    for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+      const target = getScheduledTarget(activity.schedule, d.getDay())
+      if (target === 0) continue
+      const key = localDateKey(d)
+      const entry = (dataMap[key] ??= { scheduled: 0, completed: 0 })
+      entry.scheduled += target
+      entry.completed += Math.min(actDates[key] ?? 0, target)
+    }
+  }
+
+  let totalScheduled = 0
+  let totalCompleted = 0
+
+  const data = Object.entries(dataMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, { scheduled, completed }]) => {
+      totalScheduled += scheduled
+      totalCompleted += completed
+      return {
+        date,
+        scheduled,
+        completed,
+        rate: scheduled > 0 ? Math.round((completed / scheduled) * 1000) / 1000 : 0,
+      }
+    })
+
+  return {
+    type: 'completion_rate',
+    data,
+    summary: {
+      scheduled: totalScheduled,
+      completed: totalCompleted,
+      rate: totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 1000) / 1000 : 0,
+    },
+  }
+}
+
+function computeThroughput(
+  activities: Activity[],
+  completions: Completion[],
+  fromDate: Date,
+  toDate: Date,
+): ThroughputStatistic {
+  const activityIds = new Set(activities.map((a) => a.id))
+
+  const byDate: Record<string, number> = {}
+  for (const c of completions) {
+    if (!activityIds.has(c.activityId)) continue
+    const d = new Date(c.completedAt)
+    if (d < fromDate || d > toDate) continue
+    const key = localDateKey(d)
+    byDate[key] = (byDate[key] ?? 0) + 1
+  }
+
+  let total = 0
+  let dayCount = 0
+  const data: ThroughputStatistic['data'] = []
+
+  for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+    const key = localDateKey(d)
+    const completed = byDate[key] ?? 0
+    data.push({ date: key, completed })
+    total += completed
+    dayCount++
+  }
+
+  return {
+    type: STATISTIC_TYPE.THROUGHPUT,
+    data,
+    summary: {
+      total,
+      average: dayCount > 0 ? Math.round((total / dayCount) * 100) / 100 : 0,
+    },
+  }
 }
 
 // --- Routes ---
@@ -286,6 +404,62 @@ const routes: Route[] = [
       return noContent()
     },
   },
+
+  // GET /statistics/:type
+  {
+    method: 'GET',
+    pattern: /^\/statistics\/([^/]+)\/?$/,
+    handler: ({ match, url }) => {
+      const type = match[1] as StatisticType
+
+      const from = url.searchParams.get('from')
+      const to = url.searchParams.get('to')
+      const fromDate = from ? new Date(from) : new Date(0)
+      const toDate = to ? new Date(to) : new Date()
+      fromDate.setHours(0, 0, 0, 0)
+      toDate.setHours(23, 59, 59, 999)
+
+      const activities = getItems<Activity>(ACTIVITIES_KEY).filter((a) => !a.archivedAt)
+      const completions = getItems<Completion>(COMPLETIONS_KEY)
+
+      if (type === STATISTIC_TYPE.COMPLETION_RATE)
+        return json(computeCompletionRate(activities, completions, fromDate, toDate))
+      if (type === STATISTIC_TYPE.THROUGHPUT)
+        return json(computeThroughput(activities, completions, fromDate, toDate))
+      return notFound('Unknown statistic type')
+    },
+  },
+
+  // GET /activities/:id/statistics/:type
+  {
+    method: 'GET',
+    pattern: /^\/activities\/([^/]+)\/statistics\/([^/]+)\/?$/,
+    handler: ({ match, url }) => {
+      const activityId = match[1]!
+      const type = match[2] as StatisticType
+
+      const activity = getItems<Activity>(ACTIVITIES_KEY).find((a) => a.id === activityId)
+      if (!activity) return notFound('Activity not found')
+
+      const from = url.searchParams.get('from')
+      const to = url.searchParams.get('to')
+      const fromDate = from ? new Date(from) : new Date(0)
+      const toDate = to ? new Date(to) : new Date()
+      fromDate.setHours(0, 0, 0, 0)
+      toDate.setHours(23, 59, 59, 999)
+
+      const completions = getItems<Completion>(COMPLETIONS_KEY)
+
+      if (type === STATISTIC_TYPE.COMPLETION_RATE)
+        return json({
+          activityId,
+          ...computeCompletionRate([activity], completions, fromDate, toDate),
+        })
+      if (type === STATISTIC_TYPE.THROUGHPUT)
+        return json({ activityId, ...computeThroughput([activity], completions, fromDate, toDate) })
+      return notFound('Unknown statistic type')
+    },
+  },
 ]
 
 // --- Seed data ---
@@ -481,9 +655,11 @@ export function enableMockApi(options: MockApiOptions = {}): void {
     const method = (init?.method ?? request.method ?? 'GET').toUpperCase()
     const url = new URL(request.url)
 
+    const pathname = url.pathname.replace(/^\/api/, '')
+
     for (const route of routes) {
       if (route.method !== method) continue
-      const match = url.pathname.match(route.pattern)
+      const match = pathname.match(route.pattern)
       if (!match) continue
 
       let body: unknown

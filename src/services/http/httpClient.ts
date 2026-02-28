@@ -82,7 +82,9 @@ export class HttpClient {
   }
 
   private buildUrl(path: string, params?: Record<string, string>): string {
-    const url = new URL(path, this.baseUrl)
+    const base = this.baseUrl.endsWith('/') ? this.baseUrl : this.baseUrl + '/'
+    const relativePath = path.startsWith('/') ? path.slice(1) : path
+    const url = new URL(relativePath, base)
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {

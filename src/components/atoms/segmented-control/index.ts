@@ -20,7 +20,7 @@ export const segmentedControlVariation = cva('glass inline-flex rounded-full', {
 export type SegmentedControlVariation = VariantProps<typeof segmentedControlVariation>
 
 export const segmentedControlButtonVariation = cva(
-  'relative inline-flex items-center justify-center font-medium rounded-full transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 text-muted-foreground data-[state=active]:text-primary',
+  'relative inline-flex w-full items-center justify-center font-medium rounded-full transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 text-muted-foreground data-[state=active]:text-primary',
   {
     variants: {
       size: {
