@@ -42,7 +42,7 @@ const completionsTo = new Date().toISOString()
 const { data: completions } = useCompletionsQuery(
   computed(() => props.activity?.createdAt ?? ''),
   completionsTo,
-  { enabled: computed(() => !!props.activity) },
+  { enabled: computed(() => !!props.activity), activityId: computed(() => props.id) },
 )
 
 const enrichedActivity = computed(() =>

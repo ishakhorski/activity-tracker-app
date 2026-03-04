@@ -274,9 +274,12 @@ const routes: Route[] = [
       const offset = parseInt(url.searchParams.get('offset') ?? '0', 10)
       const { fromDate, toDate } = parseDateRange(url)
 
+      const activityIdFilter = url.searchParams.get('activityId')
       const all = getItems<Completion>(COMPLETIONS_KEY).filter((c) => {
         const t = new Date(c.completedAt)
-        return t >= fromDate && t <= toDate
+        if (t < fromDate || t > toDate) return false
+        if (activityIdFilter && c.activityId !== activityIdFilter) return false
+        return true
       })
 
       const data = all.slice(offset, offset + limit).map((c) => ({
