@@ -17,9 +17,9 @@ const props = defineProps<{
   date: Date | null
   completions: EnrichedCompletion[]
   canComplete: boolean
-  confirm: (data: { note: string }) => void
-  cancel: () => void
 }>()
+
+const emit = defineEmits<{ confirm: [data: { note: string }]; cancel: [] }>()
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -40,14 +40,14 @@ const formatTime = (iso: string) =>
 const initials = (name: string) => name.charAt(0).toUpperCase()
 
 const handleConfirm = () => {
-  props.confirm({ note: note.value.trim() })
+  emit('confirm', { note: note.value.trim() })
   note.value = ''
   open.value = false
 }
 
 const handleUpdate = (newOpen: boolean) => {
   if (!newOpen) {
-    props.cancel()
+    emit('cancel')
     note.value = ''
   }
 }

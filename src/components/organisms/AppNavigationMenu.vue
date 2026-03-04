@@ -50,7 +50,7 @@ const openCreateActivityDialog = async () => {
       </button>
 
       <RouterLink
-        to="/stats"
+        :to="{ name: 'statistics-view' }"
         active-class="text-primary bg-primary/15 ring-1 ring-white/20"
         class="w-20 h-14 flex flex-col items-center justify-center rounded-full text-xs font-medium touch-manipulation transition-colors duration-150 active:bg-foreground/10"
       >
@@ -61,8 +61,8 @@ const openCreateActivityDialog = async () => {
   </nav>
   <ActivityCreateDialog
     v-model:open="isCreateActivityDialog"
-    :confirm="confirmCreateActivityDialog"
-    :cancel="cancelCreateActivityDialog"
+    @confirm="confirmCreateActivityDialog"
+    @cancel="cancelCreateActivityDialog"
   />
 </template>
 

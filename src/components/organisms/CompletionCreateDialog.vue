@@ -12,25 +12,20 @@ import {
 import { BaseButton } from '@/components/atoms/button'
 import { BaseTextarea } from '@/components/atoms/textarea'
 
-const props = defineProps<{
-  confirm: (data: { note: string }) => void
-  cancel: () => void
-}>()
+const emit = defineEmits<{ confirm: [data: { note: string }]; cancel: [] }>()
 
 const open = defineModel<boolean>('open', { default: false })
 
 const note = ref('')
 
 const handleConfirm = () => {
-  props.confirm({
-    note: note.value.trim(),
-  })
+  emit('confirm', { note: note.value.trim() })
   note.value = ''
   open.value = false
 }
 
 const handleCancel = () => {
-  props.cancel()
+  emit('cancel')
   note.value = ''
   open.value = false
 }

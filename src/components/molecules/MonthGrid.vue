@@ -10,11 +10,11 @@ import type { DayStatus } from '@/utils/activities'
 
 import type { ActivitySchedule } from '@/types/activitySchedule'
 import type { Weekday } from '@/types/weekday'
-import type { Completion } from '@/types/completion'
+import type { EnrichedCompletion } from '@/types/completion'
 
 const props = defineProps<{
   schedule: ActivitySchedule
-  completionsByDate: Record<string, Completion[]>
+  completionsByDate: Record<string, EnrichedCompletion[]>
   from: string
   loading: boolean
 }>()
@@ -43,14 +43,20 @@ const { daysGrid } = useDaysGrid({
 })
 
 const daysGridData = computed(() => {
-  const record: Record<string, { status: DayStatus; percentage: number | undefined }> = {}
+  const record: Record<
+    string,
+    { status: DayStatus; percentage: number | undefined; memberCount: number }
+  > = {}
 
   for (const item of daysGrid.value) {
-    const count = props.completionsByDate[item.dateKey]?.length ?? 0
+    const completions = props.completionsByDate[item.dateKey] ?? []
+    const count = completions.length
     const target = getTargetForDay(props.schedule, item.weekday)
+    const memberCount = new Set(completions.map((c) => c.userId)).size
     record[item.dateKey] = {
       status: getDayStatus(count, target),
       percentage: target > 0 ? Math.min((count / target) * 100, 100) : undefined,
+      memberCount,
     }
   }
 
@@ -80,7 +86,7 @@ const daysGridData = computed(() => {
         v-for="day in daysGrid"
         :key="day.dateKey"
         :disabled="day.position === 'future' || loading"
-        class="transition-transform ease-in duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        class="relative transition-transform ease-in duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         :class="
           day.position === 'future' || loading ? 'cursor-default' : 'cursor-pointer active:scale-90'
         "
@@ -102,6 +108,13 @@ const daysGridData = computed(() => {
             {{ day.dayNumber }}
           </span>
         </ActivityBrick>
+
+        <span
+          v-if="daysGridData[day.dateKey]!.memberCount > 1 && day.position !== 'future' && !loading"
+          class="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[6px] rounded-full min-w-3 h-3 flex items-center justify-center px-0.5 font-semibold leading-none pointer-events-none"
+        >
+          {{ daysGridData[day.dateKey]!.memberCount }}
+        </span>
       </button>
     </div>
   </div>

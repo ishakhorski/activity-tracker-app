@@ -15,6 +15,7 @@ const MOCK_USERS: Record<string, string> = {
   'mock-user-id': 'You',
   'mock-user-alice': 'Alice Chen',
   'mock-user-bob': 'Bob Smith',
+  'mock-user-carol': 'Carol Davis',
 }
 
 const ACTIVITIES_KEY = 'mock:activities'
@@ -178,7 +179,10 @@ const routes: Route[] = [
     handler: ({ url }) => {
       const limit = parseInt(url.searchParams.get('limit') ?? '100', 10)
       const offset = parseInt(url.searchParams.get('offset') ?? '0', 10)
-      const all = getItems<Activity>(ACTIVITIES_KEY)
+      const archivedParam = url.searchParams.get('archived')
+      let all = getItems<Activity>(ACTIVITIES_KEY)
+      if (archivedParam === 'true') all = all.filter((a) => a.archivedAt !== null)
+      else if (archivedParam === 'false') all = all.filter((a) => a.archivedAt === null)
       const data = all.slice(offset, offset + limit)
       return json({ data, total: all.length })
     },
@@ -418,7 +422,7 @@ const routes: Route[] = [
 ]
 
 const MOCK_KEYS = [ACTIVITIES_KEY, COMPLETIONS_KEY, ACTIVITY_MEMBERS_KEY]
-const SEED_KEY = 'mock:seeded_v5'
+const SEED_KEY = 'mock:seeded_v6'
 
 const daysAgo = (n: number): string => {
   const d = new Date()
@@ -487,6 +491,7 @@ const seedMockData = (): void => {
   const today = new Date().toISOString()
 
   const activities: Activity[] = [
+    // --- Active personal ---
     {
       id: 'seed-act-1',
       title: 'Morning Run',
@@ -518,6 +523,27 @@ const seedMockData = (): void => {
       archivedAt: null,
     },
     {
+      id: 'seed-act-7',
+      title: 'Read',
+      description: 'At least 20 pages a day.',
+      type: 'personal',
+      schedule: { type: 'daily', targetCompletions: 1 },
+      createdAt: daysAgo(60),
+      updatedAt: daysAgo(60),
+      archivedAt: null,
+    },
+    {
+      id: 'seed-act-8',
+      title: 'Yoga',
+      description: 'Weekend stretching and breathwork.',
+      type: 'personal',
+      schedule: { type: 'weekly', days: [0, 6], targetCompletions: 1 },
+      createdAt: daysAgo(45),
+      updatedAt: daysAgo(45),
+      archivedAt: null,
+    },
+    // --- Active group ---
+    {
       id: 'seed-act-4',
       title: 'Book Club',
       description: 'Weekly group reading sessions.',
@@ -527,6 +553,17 @@ const seedMockData = (): void => {
       updatedAt: daysAgo(118),
       archivedAt: null,
     },
+    {
+      id: 'seed-act-9',
+      title: 'Team Standup',
+      description: 'Daily async sync to share blockers and progress.',
+      type: 'group',
+      schedule: { type: 'weekly', days: [1, 2, 3, 4, 5], targetCompletions: 1 },
+      createdAt: daysAgo(75),
+      updatedAt: daysAgo(75),
+      archivedAt: null,
+    },
+    // --- Archived ---
     {
       id: 'seed-act-5',
       title: 'Evening Journal',
@@ -549,32 +586,23 @@ const seedMockData = (): void => {
     },
   ]
 
-  const [act1, act2, act3, act4, act5, act6] = activities
+  const [act1, act2, act3, act7, act8, act4, act9, act5, act6] = activities
   const completions: Completion[] = [
+    // Personal — active
     ...generateCompletions(0, 'seed-act-1', act1!.createdAt, today, 1, null, 0.73),
     ...generateCompletions(1, 'seed-act-2', act2!.createdAt, today, 2, null, 0.68),
     ...generateCompletions(2, 'seed-act-3', act3!.createdAt, today, 1, [1, 3, 5], 0.8),
+    ...generateCompletions(8, 'seed-act-7', act7!.createdAt, today, 1, null, 0.85),
+    ...generateCompletions(9, 'seed-act-8', act8!.createdAt, today, 1, [0, 6], 0.6),
+    // Book Club — group (you + Alice + Bob)
     ...generateCompletions(3, 'seed-act-4', act4!.createdAt, today, 1, [2, 4, 6], 0.65),
-    ...generateCompletions(
-      6,
-      'seed-act-4',
-      act4!.createdAt,
-      today,
-      1,
-      [2, 4, 6],
-      0.8,
-      'mock-user-alice',
-    ),
-    ...generateCompletions(
-      7,
-      'seed-act-4',
-      act4!.createdAt,
-      today,
-      1,
-      [2, 4, 6],
-      0.55,
-      'mock-user-bob',
-    ),
+    ...generateCompletions(6, 'seed-act-4', act4!.createdAt, today, 1, [2, 4, 6], 0.8, 'mock-user-alice'),
+    ...generateCompletions(7, 'seed-act-4', act4!.createdAt, today, 1, [2, 4, 6], 0.55, 'mock-user-bob'),
+    // Team Standup — group (you + Carol + Bob)
+    ...generateCompletions(10, 'seed-act-9', act9!.createdAt, today, 1, [1, 2, 3, 4, 5], 0.9),
+    ...generateCompletions(11, 'seed-act-9', act9!.createdAt, today, 1, [1, 2, 3, 4, 5], 0.88, 'mock-user-carol'),
+    ...generateCompletions(12, 'seed-act-9', act9!.createdAt, today, 1, [1, 2, 3, 4, 5], 0.75, 'mock-user-bob'),
+    // Archived
     ...generateCompletions(4, 'seed-act-5', act5!.createdAt, act5!.archivedAt!, 1, null, 0.77),
     ...generateCompletions(5, 'seed-act-6', act6!.createdAt, act6!.archivedAt!, 1, [2, 4], 0.72),
   ]
@@ -588,6 +616,7 @@ const seedMockData = (): void => {
       createdAt: a.createdAt,
       updatedAt: a.updatedAt,
     })),
+    // Book Club members
     {
       id: crypto.randomUUID(),
       activityId: 'seed-act-4',
@@ -603,6 +632,23 @@ const seedMockData = (): void => {
       role: 'member' as const,
       createdAt: act4!.createdAt,
       updatedAt: act4!.createdAt,
+    },
+    // Team Standup members
+    {
+      id: crypto.randomUUID(),
+      activityId: 'seed-act-9',
+      userId: 'mock-user-carol',
+      role: 'member' as const,
+      createdAt: act9!.createdAt,
+      updatedAt: act9!.createdAt,
+    },
+    {
+      id: crypto.randomUUID(),
+      activityId: 'seed-act-9',
+      userId: 'mock-user-bob',
+      role: 'member' as const,
+      createdAt: act9!.createdAt,
+      updatedAt: act9!.createdAt,
     },
   ]
 

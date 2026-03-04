@@ -8,6 +8,7 @@ export const COMPLETIONS_QUERY_KEY = 'completions' as const
 export const useCompletionsQuery = (
   dateFrom: MaybeRefOrGetter<string>,
   dateTo: MaybeRefOrGetter<string>,
+  options?: { enabled?: MaybeRefOrGetter<boolean> },
 ) => {
   return useQuery({
     queryKey: computed(() => [COMPLETIONS_QUERY_KEY, toValue(dateFrom), toValue(dateTo)]),
@@ -15,5 +16,6 @@ export const useCompletionsQuery = (
       const response = await getCompletionsByDateRange(toValue(dateFrom), toValue(dateTo))
       return response.data
     },
+    enabled: options?.enabled,
   })
 }

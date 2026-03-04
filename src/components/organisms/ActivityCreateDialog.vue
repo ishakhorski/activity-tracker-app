@@ -31,10 +31,7 @@ import { WEEKDAYS_ORDERED, WEEKDAY_LABELS, type Weekday } from '@/types/weekday'
 import { ACTIVITY_TYPE } from '@/types/activityType'
 import type { CreateActivity } from '@/types/activity'
 
-const props = defineProps<{
-  confirm: (data: CreateActivity) => void
-  cancel: () => void
-}>()
+const emit = defineEmits<{ confirm: [data: CreateActivity]; cancel: [] }>()
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -88,7 +85,7 @@ const handleConfirm = () => {
         }
       : { type: ACTIVITY_SCHEDULE_TYPE.DAILY, targetCompletions: targetCompletions.value }
 
-  props.confirm({
+  emit('confirm', {
     type: activityType.value as 'personal' | 'group',
     title: title.value.trim(),
     description: description.value.trim() || null,
@@ -99,7 +96,7 @@ const handleConfirm = () => {
 }
 
 const handleCancel = () => {
-  props.cancel()
+  emit('cancel')
   resetForm()
   open.value = false
 }

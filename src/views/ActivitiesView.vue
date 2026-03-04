@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import PageHeader from '@/components/molecules/PageHeader.vue'
 import PageContent from '@/components/molecules/PageContent.vue'
-import ActivityCardSkeleton from '@/components/molecules/ActivityCardSkeleton.vue'
-import ActivitiesOnboarding from '@/components/molecules/ActivitiesOnboarding.vue'
-import ActivitiesError from '@/components/molecules/ActivitiesError.vue'
-import ActivityCard from '@/components/organisms/ActivityCard.vue'
+import ActivityCard from '@/components/molecules/activities-list/ActivityCard.vue'
+import ActivityCardSkeleton from '@/components/molecules/activities-list/ActivityCardSkeleton.vue'
+import ActivitiesEmpty from '@/components/molecules/activities-list/ActivitiesEmpty.vue'
+import ActivitiesError from '@/components/molecules/activities-list/ActivitiesError.vue'
 import CompletionCreateDialog from '@/components/organisms/CompletionCreateDialog.vue'
 
 import { useEnrichedActivities } from '@/composables/useEnrichedActivities'
 import { useTrackCompletion } from '@/composables/useTrackCompletion'
+
+const {
+  enrichedActivities,
+  isEnrichedActivitiesLoading,
+  isEnrichedActivitiesError,
+  retryEnrichedActivities,
+} = useEnrichedActivities()
 
 const {
   isCompletionDialog,
@@ -17,13 +24,6 @@ const {
   complete,
   completeWithNote,
 } = useTrackCompletion()
-
-const {
-  enrichedActivities,
-  isEnrichedActivitiesLoading,
-  isEnrichedActivitiesError,
-  retryEnrichedActivities,
-} = useEnrichedActivities()
 
 const cardRefs = new Map<string, { play: () => void }>()
 
@@ -43,10 +43,8 @@ const handleAddCompletionWithNote = (activityId: string) =>
     <div v-if="isEnrichedActivitiesLoading" class="flex flex-col gap-3">
       <ActivityCardSkeleton v-for="i in 4" :key="i" />
     </div>
-
     <ActivitiesError v-else-if="isEnrichedActivitiesError" @retry="retryEnrichedActivities" />
-
-    <ActivitiesOnboarding v-else-if="enrichedActivities.length === 0" />
+    <ActivitiesEmpty v-else-if="enrichedActivities.length === 0" />
 
     <TransitionGroup v-else tag="div" name="activity-list" class="relative flex flex-col gap-3">
       <ActivityCard
@@ -67,8 +65,8 @@ const handleAddCompletionWithNote = (activityId: string) =>
 
   <CompletionCreateDialog
     v-model:open="isCompletionDialog"
-    :cancel="cancelCompletionDialog"
-    :confirm="confirmCompletionDialog"
+    @cancel="cancelCompletionDialog"
+    @confirm="confirmCompletionDialog"
   />
 </template>
 

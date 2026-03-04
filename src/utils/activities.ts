@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import type { Activity, EnrichedActivity } from '@/types/activity'
 import type { EnrichedCompletion } from '@/types/completion'
 import { ACTIVITY_SCHEDULE_TYPE, type ActivitySchedule } from '@/types/activitySchedule'
-import type { Weekday } from '@/types/weekday'
+import { WEEKDAY_LABELS, WEEKDAYS_ORDERED, type Weekday } from '@/types/weekday'
 
 export const toLocalDateKey = (date: Date): string => format(date, 'yyyy-MM-dd')
 
@@ -18,6 +18,16 @@ export const enrichActivity = (
     ;(completionsByDate[key] ??= []).push(completion)
   }
   return { ...activity, completionsByDate }
+}
+
+export const formatScheduleLabel = (schedule: ActivitySchedule): string => {
+  if (schedule.type === ACTIVITY_SCHEDULE_TYPE.DAILY) {
+    return `Daily · ${schedule.targetCompletions}× per day`
+  }
+  const days = WEEKDAYS_ORDERED.filter((d) => (schedule.days as Weekday[]).includes(d))
+    .map((d) => WEEKDAY_LABELS[d])
+    .join(', ')
+  return `${days} · ${schedule.targetCompletions}× per session`
 }
 
 export const isScheduledOnDay = (activity: Activity, dayOfWeek: number): boolean => {

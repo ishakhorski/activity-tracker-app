@@ -15,7 +15,16 @@ const props = defineProps<{
   activityTitle: string
 }>()
 
+const emit = defineEmits<{ cancel: [] }>()
+
 const open = defineModel<boolean>('open', { default: false })
+
+const handleUpdate = (newOpen: boolean) => {
+  if (!newOpen) {
+    emit('cancel')
+    open.value = false
+  }
+}
 
 const url = computed(() => `${window.location.origin}/join/${props.activityId}`)
 const qrDataUrl = ref('')
@@ -45,7 +54,7 @@ const shareLink = () => navigator.share({ title: props.activityTitle, url: url.v
 </script>
 
 <template>
-  <BaseDialog v-model:open="open">
+  <BaseDialog :open="open" @update:open="handleUpdate">
     <BaseDialogContent>
       <BaseDialogHeader>
         <BaseDialogTitle>Invite Members</BaseDialogTitle>

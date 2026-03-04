@@ -49,7 +49,7 @@ const { theme } = useTheme()
       </div>
 
       <RouterLink
-        :to="{ name: 'archived-view' }"
+        :to="{ name: 'activities-archive' }"
         class="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-4 transition-colors active:bg-foreground/5"
       >
         <div class="flex items-center gap-3 text-sm font-medium">
