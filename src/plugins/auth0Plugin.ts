@@ -8,6 +8,7 @@ import {
 } from '@auth0/auth0-spa-js'
 
 import { AUTH_ROLE } from '@/types/auth'
+import { http } from '@/services/http'
 
 const AUTH0_KEY = Symbol('auth0')
 
@@ -34,6 +35,7 @@ export const createAuth0Plugin = async (router: Router): Promise<Plugin> => {
     domain: import.meta.env.VITE_AUTH0_DOMAIN,
     clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
     authorizationParams: {
+      audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       redirect_uri: `${window.location.origin}/auth/callback`,
     },
     useRefreshTokens: true,
@@ -42,6 +44,8 @@ export const createAuth0Plugin = async (router: Router): Promise<Plugin> => {
 
   isAuthenticated.value = await client.isAuthenticated()
   user.value = isAuthenticated.value ? await client.getUser() : undefined
+
+  http.setTokenGetter(() => client.getTokenSilently())
 
   router.beforeEach((to) => {
     const roles = to.meta.roles

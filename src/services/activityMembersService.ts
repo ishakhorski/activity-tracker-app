@@ -7,10 +7,7 @@ export const getActivityMembers = (
   pagination: { limit?: number; offset?: number } = {},
 ): Promise<{ data: EnrichedActivityMember[]; total: number }> => {
   const { limit = 100, offset = 0 } = pagination
-  const params: Record<string, string> = {
-    limit: String(limit),
-    offset: String(offset),
-  }
+  const params = { limit, offset }
   return http.get<{ data: EnrichedActivityMember[]; total: number }>(
     `/activities/${activityId}/activity-members`,
     { params },

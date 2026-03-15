@@ -2,17 +2,22 @@ import { HttpError } from './httpError'
 
 export interface RequestOptions {
   headers?: Record<string, string>
-  params?: Record<string, string>
+  params?: Record<string, string | number | boolean>
   signal?: AbortSignal
 }
 
 export class HttpClient {
   private baseUrl: string
   private defaultHeaders: Record<string, string>
+  private tokenGetter: (() => Promise<string>) | null = null
 
   constructor(baseUrl: string, defaultHeaders: Record<string, string> = {}) {
     this.baseUrl = baseUrl
     this.defaultHeaders = defaultHeaders
+  }
+
+  setTokenGetter(fn: () => Promise<string>): void {
+    this.tokenGetter = fn
   }
 
   async get<T>(path: string, options?: RequestOptions): Promise<T> {
@@ -43,10 +48,14 @@ export class HttpClient {
   ): Promise<T> {
     const url = this.buildUrl(path, options?.params)
 
-    const headers: Record<string, string> = {
-      ...this.defaultHeaders,
-      ...options?.headers,
+    const headers: Record<string, string> = { ...this.defaultHeaders }
+
+    if (this.tokenGetter) {
+      const token = await this.tokenGetter()
+      headers['Authorization'] = `Bearer ${token}`
     }
+
+    Object.assign(headers, options?.headers)
 
     if (body !== undefined) {
       headers['Content-Type'] = 'application/json'
@@ -61,34 +70,32 @@ export class HttpClient {
         signal: options?.signal,
       })
     } catch (error) {
-      throw new HttpError(0, 'Network Error', { cause: error })
+      throw error instanceof HttpError ? error : new HttpError(0)
     }
 
     if (!response.ok) {
-      let errorBody: unknown
-      try {
-        errorBody = await response.json()
-      } catch {
-        errorBody = await response.text().catch(() => null)
-      }
-      throw new HttpError(response.status, response.statusText, errorBody)
+      throw new HttpError(response.status)
     }
 
     if (response.status === 204) {
       return undefined as T
     }
 
-    return (await response.json()) as T
+    const contentType = response.headers.get('Content-Type') ?? ''
+    if (contentType.includes('application/json')) {
+      return (await response.json()) as T
+    }
+    return (await response.text()) as T
   }
 
-  private buildUrl(path: string, params?: Record<string, string>): string {
+  private buildUrl(path: string, params?: Record<string, string | number | boolean>): string {
     const base = this.baseUrl.endsWith('/') ? this.baseUrl : this.baseUrl + '/'
     const relativePath = path.startsWith('/') ? path.slice(1) : path
     const url = new URL(relativePath, base)
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
-        url.searchParams.set(key, value)
+        url.searchParams.set(key, String(value))
       }
     }
 

@@ -6,11 +6,8 @@ export const getActivities = (
   options: { limit?: number; offset?: number; archived?: boolean } = {},
 ): Promise<{ data: Activity[]; total: number }> => {
   const { limit = 100, offset = 0, archived } = options
-  const params: Record<string, string> = {
-    limit: String(limit),
-    offset: String(offset),
-  }
-  if (archived !== undefined) params.archived = String(archived)
+  const params: Record<string, string | number | boolean> = { limit, offset }
+  if (archived !== undefined) params.archived = archived
   return http.get<{ data: Activity[]; total: number }>('/activities', { params })
 }
 
